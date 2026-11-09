@@ -1,0 +1,84 @@
+# Render Blueprint Specification for FINEXA
+# Deploy via Render Dashboard -> Blueprints -> Connect Repository
+version: "1"
+
+services:
+  # ==========================================
+  # FINEXA FastAPI Backend Web Service
+  # ==========================================
+  - type: web
+    name: finexa-backend
+    runtime: python
+    region: oregon
+    plan: starter
+    buildCommand: "pip install -r backend/requirements.txt"
+    startCommand: "bash scripts/start.sh"
+    healthCheckPath: /api/health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.13.1
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: SUPABASE_JWT_SECRET
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: CORS_ORIGINS
+        value: "https://finexa.vercel.app,http://localhost:3000"
+      - key: DEMO_MODE
+        value: "true"
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GEMINI_MODEL
+        value: "gemini-2.5-flash"
+      - key: AI_RATE_LIMIT_PER_MINUTE
+        value: "20"
+      - key: AI_MAX_TOOL_CALLS
+        value: "6"
+      - key: AI_MAX_OUTPUT_TOKENS
+        value: "1200"
+      - key: PAYPAL_MODE
+        value: "sandbox"
+      - key: PAYPAL_CLIENT_ID
+        sync: false
+      - key: PAYPAL_CLIENT_SECRET
+        sync: false
+      - key: PAYPAL_WEBHOOK_ID
+        sync: false
+      - key: ZAPIER_SIGNING_SECRET
+        sync: false
+
+  # ==========================================
+  # FINEXA Daily Overdue & Runway Scan Cron Job
+  # ==========================================
+  - type: cron
+    name: finexa-cron-daily-overdue
+    runtime: python
+    region: oregon
+    plan: starter
+    schedule: "0 6 * * *"  # Runs every day at 06:00 UTC
+    buildCommand: "pip install -r backend/requirements.txt"
+    startCommand: "python -m backend.app.jobs.daily_overdue_check"
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.13.1
+      - key: SUPABASE_URL
+        fromService:
+          type: web
+          name: finexa-backend
+          envVarKey: SUPABASE_URL
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        fromService:
+          type: web
+          name: finexa-backend
+          envVarKey: SUPABASE_SERVICE_ROLE_KEY
+      - key: DATABASE_URL
+        fromService:
+          type: web
+          name: finexa-backend
+          envVarKey: DATABASE_URL
+      - key: DEMO_MODE
+        value: "true"
+

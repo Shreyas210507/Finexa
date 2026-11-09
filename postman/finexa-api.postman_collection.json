@@ -1,0 +1,196 @@
+{
+  "info": {
+    "name": "FINEXA API Collection",
+    "description": "Postman collection for FINEXA Financial Intelligence API (FastAPI + Supabase)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{authToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "health"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Auth & Profiles",
+      "item": [
+        {
+          "name": "Get Current User & Org",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Organisation-ID",
+                "value": "{{organisationId}}",
+                "disabled": true
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "me"]
+            }
+          }
+        },
+        {
+          "name": "Update Profile",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Alex Mercer\",\n  \"avatar_url\": \"https://example.com/avatar.png\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/profile",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "profile"]
+            }
+          }
+        },
+        {
+          "name": "Onboard User & Org",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Alex Founder\",\n  \"org_name\": \"Nimbus Labs\",\n  \"currency\": \"INR\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/onboard",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "onboard"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Organisations",
+      "item": [
+        {
+          "name": "Get Current Organisation",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Organisation-ID",
+                "value": "{{organisationId}}",
+                "disabled": true
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/organisations/current",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "organisations", "current"]
+            }
+          }
+        },
+        {
+          "name": "Update Current Organisation",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Organisation-ID",
+                "value": "{{organisationId}}",
+                "disabled": true
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Nimbus Labs Updated\",\n  \"currency\": \"INR\",\n  \"settings\": {\"fiscal_year_start\": 4}\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/organisations/current",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "organisations", "current"]
+            }
+          }
+        },
+        {
+          "name": "Get Organisation Members",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Organisation-ID",
+                "value": "{{organisationId}}",
+                "disabled": true
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/organisations/current/members",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "organisations", "current", "members"]
+            }
+          }
+        },
+        {
+          "name": "Invite Organisation Member",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Organisation-ID",
+                "value": "{{organisationId}}",
+                "disabled": true
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": \"00000000-0000-0000-0000-000000000000\",\n  \"role\": \"member\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/organisations/current/members/invite",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "organisations", "current", "members", "invite"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
+

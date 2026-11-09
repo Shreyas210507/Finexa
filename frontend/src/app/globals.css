@@ -1,0 +1,115 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: #F4F3F8;
+    --foreground: #111019;
+    --panel: #FFFFFF;
+    --card: #FFFFFF;
+    --card-elevated: #F9F8FD;
+    --card-foreground: #111019;
+    --card-border: #E5E3EC;
+    --popover: #FFFFFF;
+    --popover-foreground: #111019;
+    --muted: #EFEBF5;
+    --muted-foreground: #7E7A8E;
+    --accent: #8B7CFF;
+    --accent-foreground: #FFFFFF;
+    --border: #E5E3EC;
+    --input: #FFFFFF;
+    --ring: #8B7CFF;
+    --positive: #10B981;
+    --negative: #EF4444;
+  }
+
+  .dark {
+    --background: #111019;
+    --foreground: #F5F4FA;
+    --panel: #191823;
+    --card: #201F2B;
+    --card-elevated: #272532;
+    --card-foreground: #F5F4FA;
+    --card-border: rgba(255, 255, 255, 0.07);
+    --popover: #191823;
+    --popover-foreground: #F5F4FA;
+    --muted: #272532;
+    --muted-foreground: #9693A5;
+    --accent: #8B7CFF;
+    --accent-foreground: #F5F4FA;
+    --border: rgba(255, 255, 255, 0.07);
+    --input: #272532;
+    --ring: #8B7CFF;
+    --positive: #48D597;
+    --negative: #F07878;
+  }
+
+  * {
+    border-color: var(--border);
+  }
+
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+}
+
+/* Tabular numerals for monetary amounts */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(150, 147, 165, 0.2);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(139, 124, 255, 0.4);
+}
+
+/* AG Grid custom overrides for FINEXA theme */
+.ag-theme-finexa-dark {
+  --ag-background-color: #201F2B;
+  --ag-foreground-color: #F5F4FA;
+  --ag-border-color: rgba(255, 255, 255, 0.07);
+  --ag-header-background-color: #191823;
+  --ag-header-foreground-color: #9693A5;
+  --ag-odd-row-background-color: #201F2B;
+  --ag-row-hover-color: rgba(139, 124, 255, 0.1);
+  --ag-selected-row-background-color: rgba(139, 124, 255, 0.18);
+  --ag-font-family: inherit;
+  --ag-font-size: 13px;
+  --ag-row-height: 48px;
+  --ag-header-height: 44px;
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.ag-theme-finexa-light {
+  --ag-background-color: #FFFFFF;
+  --ag-foreground-color: #111019;
+  --ag-border-color: #E5E3EC;
+  --ag-header-background-color: #F9F8FD;
+  --ag-header-foreground-color: #7E7A8E;
+  --ag-odd-row-background-color: #FFFFFF;
+  --ag-row-hover-color: rgba(139, 124, 255, 0.06);
+  --ag-selected-row-background-color: rgba(139, 124, 255, 0.12);
+  --ag-font-family: inherit;
+  --ag-font-size: 13px;
+  --ag-row-height: 48px;
+  --ag-header-height: 44px;
+  border-radius: 16px;
+  overflow: hidden;
+}

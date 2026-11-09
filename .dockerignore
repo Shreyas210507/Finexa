@@ -1,0 +1,65 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+*.egg
+dist/
+build/
+.eggs/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Testing & Coverage
+.pytest_cache/
+htmlcov/
+.coverage
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Frontend (not needed in backend container)
+frontend/
+node_modules/
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Documentation (not needed at runtime)
+docs/
+*.md
+!backend/requirements.txt
+
+# Design assets
+design/
+public/
+
+# Postman
+postman/
+
+# Environment files (secrets injected via Render env vars)
+.env
+.env.*
+!.env.example
+
+# Agents & AI config
+.agents/
+
+# Supabase local config
+supabase/
+
