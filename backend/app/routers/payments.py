@@ -37,8 +37,8 @@ router = APIRouter(prefix="/payments", tags=["Payments & Collections"])
 class CreateOrderRequest(BaseModel):
     invoice_id: str
     amount: Optional[float] = None
-    return_url: str = "http://localhost:3000/payments?status=success"
-    cancel_url: str = "http://localhost:3000/payments?status=cancelled"
+    return_url: Optional[str] = None
+    cancel_url: Optional[str] = None
 
 
 class CaptureOrderRequest(BaseModel):
@@ -133,13 +133,15 @@ async def create_paypal_order(
 
     if _is_configured():
         try:
+            ret_url = req.return_url or f"{settings.FRONTEND_URL}/payments?status=success"
+            can_url = req.cancel_url or f"{settings.FRONTEND_URL}/payments?status=cancelled"
             result = await create_order(
                 invoice_number=invoice.invoice_number,
                 amount=pay_amount,
                 currency=current_org.currency or "USD",
                 description=f"FINEXA Invoice {invoice.invoice_number} - {customer_name}",
-                return_url=req.return_url,
-                cancel_url=req.cancel_url,
+                return_url=ret_url,
+                cancel_url=can_url,
             )
             return {
                 "order_id": result["order_id"],

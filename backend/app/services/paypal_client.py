@@ -112,8 +112,8 @@ async def create_order(
     amount: Decimal,
     currency: str = "USD",
     description: str = "",
-    return_url: str = "http://localhost:3000/payments?status=success",
-    cancel_url: str = "http://localhost:3000/payments?status=cancelled",
+    return_url: Optional[str] = None,
+    cancel_url: Optional[str] = None,
     idempotency_key: Optional[str] = None,
 ) -> Dict[str, Any]:
     """Create PayPal Orders v2 order with CAPTURE intent."""
@@ -121,6 +121,9 @@ async def create_order(
     base_url = _get_base_url()
     if not isinstance(amount, Decimal):
         amount = Decimal(str(amount))
+
+    ret_url = return_url or f"{settings.FRONTEND_URL}/payments?status=success"
+    can_url = cancel_url or f"{settings.FRONTEND_URL}/payments?status=cancelled"
 
     order_payload = {
         "intent": "CAPTURE",
@@ -139,8 +142,8 @@ async def create_order(
             "brand_name": "FINEXA Financial Intelligence",
             "landing_page": "BILLING",
             "user_action": "PAY_NOW",
-            "return_url": return_url,
-            "cancel_url": cancel_url,
+            "return_url": ret_url,
+            "cancel_url": can_url,
         },
     }
 

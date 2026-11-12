@@ -31,7 +31,28 @@ import {
   PaymentCaptureResponse,
 } from "./api-types";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+function getApiBaseUrl(): string {
+  // 1. Runtime function binding on Vercel (internal service-to-service communication)
+  if (typeof window === "undefined" && process.env.BACKEND_URL) {
+    return process.env.BACKEND_URL.replace(/\/$/, "");
+  }
+  // 2. Explicit public URL if set
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    return process.env.NEXT_PUBLIC_API_URL.replace(/\/$/, "");
+  }
+  // 3. Client-side in browser: relative path hits Vercel's top-level /api rewrite
+  if (typeof window !== "undefined") {
+    return "";
+  }
+  // 4. Local development SSR fallback
+  return "http://localhost:8000";
+}
+
+const API_BASE_URL = {
+  toString(): string {
+    return getApiBaseUrl();
+  },
+};
 
 class APIClient {
   private async getHeaders(orgId?: string): Promise<HeadersInit> {

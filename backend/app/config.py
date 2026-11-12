@@ -20,6 +20,7 @@ class Settings(BaseSettings):
 
     # API & Security
     CORS_ORIGINS: str = Field(default="http://localhost:3000")
+    FRONTEND_URL: str = Field(default="http://localhost:3000")
     DEMO_MODE: bool = Field(default=True)
 
     # AI Configuration (Gemini)
@@ -43,7 +44,10 @@ class Settings(BaseSettings):
     @computed_field
     @property
     def cors_origin_list(self) -> List[str]:
-        return [origin.strip() for origin in self.CORS_ORIGINS.split(",") if origin.strip()]
+        origins = [origin.strip() for origin in self.CORS_ORIGINS.split(",") if origin.strip()]
+        if self.FRONTEND_URL and self.FRONTEND_URL not in origins and "*" not in origins:
+            origins.append(self.FRONTEND_URL)
+        return origins
 
 
 settings = Settings()
