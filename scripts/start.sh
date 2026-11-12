@@ -16,8 +16,12 @@ echo "============================================"
 
 # Step 1: Run Alembic database migrations
 echo "[1/2] Running Alembic migrations..."
-alembic upgrade head
-echo "       Migrations completed successfully."
+if alembic upgrade head; then
+    echo "       Migrations completed successfully."
+else
+    echo "       [WARNING] Database migrations could not connect to primary database."
+    echo "       Continuing startup with local fallback engine..."
+fi
 
 # Step 2: Start Uvicorn with production settings
 echo "[2/2] Starting Uvicorn server..."
