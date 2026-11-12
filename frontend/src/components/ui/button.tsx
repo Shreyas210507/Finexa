@@ -22,7 +22,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     ref
   ) => {
     const baseStyles =
-      "inline-flex items-center justify-center font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8B7CFF] focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none select-none rounded-xl";
+      "inline-flex items-center justify-center font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4318FF] focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none select-none rounded-xl";
 
     const sizeStyles = {
       sm: "h-9 px-3 text-xs min-h-[36px] rounded-lg",
@@ -33,15 +33,15 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
 
     const variantStyles = {
       primary:
-        "bg-[#8B7CFF] hover:bg-[#7A6AE6] text-white shadow-sm hover:shadow-md active:scale-[0.98]",
+        "bg-[#4318FF] hover:bg-[#3615CC] text-white shadow-[0_4px_14px_rgba(67,24,255,0.35)] hover:shadow-[0_6px_20px_rgba(67,24,255,0.5)] active:scale-[0.98]",
       gradient:
-        "bg-gradient-to-r from-[#8B7CFF] via-[#9B8DFC] to-[#A78BFA] text-white shadow-md hover:opacity-95 active:scale-[0.98]",
+        "bg-gradient-to-r from-[#4318FF] via-[#5B33FF] to-[#00F0FF] text-white shadow-[0_4px_16px_rgba(67,24,255,0.35)] hover:opacity-95 active:scale-[0.98]",
       secondary:
-        "bg-panel text-foreground border border-border hover:bg-card active:scale-[0.98]",
+        "glass-card text-foreground border border-white/10 hover:border-white/20 hover:bg-white/5 active:scale-[0.98]",
       outline:
-        "border border-border bg-transparent hover:bg-muted text-foreground active:scale-[0.98]",
+        "border border-white/10 bg-transparent hover:bg-white/5 text-foreground active:scale-[0.98]",
       ghost:
-        "bg-transparent hover:bg-muted text-foreground active:scale-[0.98]",
+        "bg-transparent hover:bg-white/5 text-foreground active:scale-[0.98]",
       destructive:
         "bg-[#F07878] hover:bg-[#e06565] text-white shadow-sm active:scale-[0.98]",
     };

@@ -197,7 +197,7 @@ def test_journey_3_what_if_simulator_hiring_and_persistence(client, db_session):
     assert any(s["name"] == "Scale Core Engineering" for s in saved)
 
 
-def test_journey_4_invoice_paypal_capture_reconciliation(client, db_session):
+def test_journey_4_invoice_paypal_capture_reconciliation(client, db_session, monkeypatch):
     """
     Journey 4: Invoice -> PayPal Sandbox Capture -> Cash Reconciliation.
     User creates an invoice for $20,000 -> captures payment via PayPal ->
@@ -239,6 +239,20 @@ def test_journey_4_invoice_paypal_capture_reconciliation(client, db_session):
     )
     assert order_resp.status_code == 200
     order_id = order_resp.json()["order_id"]
+
+    # Mock PayPal capture response for simulated buyer approval
+    async def mock_capture(order_id: str):
+        return {
+            "order_id": order_id,
+            "order_status": "COMPLETED",
+            "capture": {
+                "capture_id": f"CAP-{order_id}",
+                "amount": "20000.00",
+                "currency": "USD",
+                "status": "COMPLETED",
+            },
+        }
+    monkeypatch.setattr("backend.app.routers.payments.capture_order", mock_capture)
 
     # 3. Capture Order
     cap_resp = client.post(

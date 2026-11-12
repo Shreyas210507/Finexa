@@ -1,3 +1,4 @@
+from pydantic import BaseModel, Field
 from typing import Optional
 import uuid
 from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
@@ -153,5 +154,52 @@ def download_invoice_pdf(
         content=pdf_bytes,
         media_type="application/pdf",
         headers={"Content-Disposition": f"inline; filename=invoice-{inv_id}.pdf"},
+    )
+
+
+class UpdateInvoiceStatusRequest(BaseModel):
+    status: str = Field(..., pattern="^(Draft|Sent|Paid|Overdue|Cancelled)$")
+
+
+@router.patch("/{inv_id}/status", response_model=InvoiceResponse)
+def update_invoice_status(
+    inv_id: uuid.UUID,
+    payload: UpdateInvoiceStatusRequest,
+    db: Session = Depends(get_db),
+    current_org: Organisation = Depends(get_current_org),
+    current_profile: Profile = Depends(get_current_profile),
+    _: None = Depends(require_role(["owner", "admin"])),
+):
+    """Update invoice workflow status with audit tracking."""
+    inv = invoice_service.update_invoice_status(
+        db=db,
+        org_id=current_org.id,
+        user_id=current_profile.id,
+        invoice_id=inv_id,
+        new_status=payload.status,
+    )
+    if not inv:
+        raise HTTPException(status_code=404, detail="Invoice not found")
+    return InvoiceResponse(
+        id=inv.id,
+        organisation_id=inv.organisation_id,
+        invoice_number=inv.invoice_number,
+        customer_id=inv.customer_id,
+        customer_name=inv.customer.name if inv.customer else None,
+        status=inv.status,
+        issue_date=inv.issue_date,
+        due_date=inv.due_date,
+        subtotal=inv.subtotal,
+        tax_rate=inv.tax_rate,
+        tax_amount=inv.tax_amount,
+        discount_amount=inv.discount_amount,
+        total=inv.total,
+        amount_paid=inv.amount_paid,
+        balance=inv.balance,
+        notes=inv.notes,
+        paypal_invoice_id=inv.paypal_invoice_id,
+        line_items=inv.line_items,
+        created_at=inv.created_at,
+        updated_at=inv.updated_at,
     )
 

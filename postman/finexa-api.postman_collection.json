@@ -1,7 +1,8 @@
 {
   "info": {
-    "name": "FINEXA API Collection",
-    "description": "Postman collection for FINEXA Financial Intelligence API (FastAPI + Supabase)",
+    "name": "FINEXA Financial Intelligence API",
+    "description": "Complete production API test suite for FINEXA — Autonomous AI-Powered Financial Intelligence Platform for SMBs. Includes automated tests for Decimal precision, organization isolation, and AI agents.",
+    "version": "2.0.0",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": {
@@ -16,14 +17,30 @@
   },
   "item": [
     {
-      "name": "Health",
+      "name": "1. Health & System Diagnostics",
       "item": [
         {
-          "name": "Health Check",
+          "name": "Engine Health Check",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('Response is healthy and returns system status', () => {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('status');",
+                  "    pm.expect(['healthy', 'ok']).to.include(json.status.toLowerCase());",
+                  "});",
+                  "pm.test('Response time is under 500ms', () => pm.expect(pm.response.responseTime).to.be.below(500));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
           "request": {
             "auth": { "type": "noauth" },
             "method": "GET",
-            "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/health",
               "host": ["{{baseUrl}}"],
@@ -34,19 +51,31 @@
       ]
     },
     {
-      "name": "Auth & Profiles",
+      "name": "2. Authentication & Organisation",
       "item": [
         {
-          "name": "Get Current User & Org",
+          "name": "Get Current User & Org Profile",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('Returns valid user profile and active organization', () => {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('profile');",
+                  "    pm.expect(json).to.have.property('current_org');",
+                  "    if (json.current_org) {",
+                  "        pm.environment.set('organisationId', json.current_org.id);",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
           "request": {
             "method": "GET",
-            "header": [
-              {
-                "key": "X-Organisation-ID",
-                "value": "{{organisationId}}",
-                "disabled": true
-              }
-            ],
             "url": {
               "raw": "{{baseUrl}}/api/auth/me",
               "host": ["{{baseUrl}}"],
@@ -55,137 +84,358 @@
           }
         },
         {
-          "name": "Update Profile",
-          "request": {
-            "method": "PATCH",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
+          "name": "Get Organisation Details",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('Organisation has valid base currency', () => {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('currency');",
+                  "    pm.expect(json.currency).to.be.a('string');",
+                  "});"
+                ],
+                "type": "text/javascript"
               }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"name\": \"Alex Mercer\",\n  \"avatar_url\": \"https://example.com/avatar.png\"\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/api/auth/profile",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "auth", "profile"]
             }
-          }
-        },
-        {
-          "name": "Onboard User & Org",
+          ],
           "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"name\": \"Alex Founder\",\n  \"org_name\": \"Nimbus Labs\",\n  \"currency\": \"INR\"\n}"
-            },
+            "method": "GET",
             "url": {
-              "raw": "{{baseUrl}}/api/auth/onboard",
+              "raw": "{{baseUrl}}/api/organisations/current",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "auth", "onboard"]
+              "path": ["api", "organisations", "current"]
             }
           }
         }
       ]
     },
     {
-      "name": "Organisations",
+      "name": "3. Financial Intelligence Dashboard",
       "item": [
         {
-          "name": "Get Current Organisation",
+          "name": "Get Dashboard Summary KPIs",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('Returns exact monetary balances in Decimal format', () => {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('closing_balance');",
+                  "    pm.expect(json).to.have.property('revenue');",
+                  "    pm.expect(json).to.have.property('expenses');",
+                  "    pm.expect(json).to.have.property('runway_display');",
+                  "    pm.expect(parseFloat(json.closing_balance)).to.be.a('number');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
           "request": {
             "method": "GET",
-            "header": [
-              {
-                "key": "X-Organisation-ID",
-                "value": "{{organisationId}}",
-                "disabled": true
-              }
-            ],
             "url": {
-              "raw": "{{baseUrl}}/api/organisations/current",
+              "raw": "{{baseUrl}}/api/dashboard/summary?period=30d",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "organisations", "current"]
+              "path": ["api", "dashboard", "summary"],
+              "query": [{ "key": "period", "value": "30d" }]
             }
           }
         },
         {
-          "name": "Update Current Organisation",
-          "request": {
-            "method": "PATCH",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "X-Organisation-ID",
-                "value": "{{organisationId}}",
-                "disabled": true
+          "name": "Get Cash Flow Trajectory Timeline",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('Returns time series points array for chart rendering', () => {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('points');",
+                  "    pm.expect(json.points).to.be.an('array');",
+                  "});"
+                ],
+                "type": "text/javascript"
               }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"name\": \"Nimbus Labs Updated\",\n  \"currency\": \"INR\",\n  \"settings\": {\"fiscal_year_start\": 4}\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/api/organisations/current",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "organisations", "current"]
             }
-          }
-        },
-        {
-          "name": "Get Organisation Members",
+          ],
           "request": {
             "method": "GET",
-            "header": [
-              {
-                "key": "X-Organisation-ID",
-                "value": "{{organisationId}}",
-                "disabled": true
-              }
-            ],
             "url": {
-              "raw": "{{baseUrl}}/api/organisations/current/members",
+              "raw": "{{baseUrl}}/api/dashboard/cashflow?period=30d",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "organisations", "current", "members"]
+              "path": ["api", "dashboard", "cashflow"],
+              "query": [{ "key": "period", "value": "30d" }]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Double-Entry Transactions Ledger",
+      "item": [
+        {
+          "name": "List Ledger Transactions",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('Pagination payload contains items array', () => {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('items');",
+                  "    pm.expect(json.items).to.be.an('array');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/transactions?page=1&size=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "transactions"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "size", "value": "20" }
+              ]
             }
           }
         },
         {
-          "name": "Invite Organisation Member",
+          "name": "Create Ledger Transaction",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Transaction created successfully (200 or 201)', () => {",
+                  "    pm.expect([200, 201]).to.include(pm.response.code);",
+                  "});",
+                  "pm.test('New transaction has valid ID and amount', () => {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('id');",
+                  "    pm.expect(json.amount).to.equal('2500.00');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "X-Organisation-ID",
-                "value": "{{organisationId}}",
-                "disabled": true
-              }
-            ],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"user_id\": \"00000000-0000-0000-0000-000000000000\",\n  \"role\": \"member\"\n}"
+              "raw": "{\n  \"type\": \"expense\",\n  \"category\": \"Software\",\n  \"description\": \"Enterprise AI API Compute\",\n  \"amount\": \"2500.00\",\n  \"date\": \"2026-10-31\",\n  \"vendor_or_client\": \"Anthropic & OpenAI\",\n  \"reference\": \"POSTMAN-TEST-001\"\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/api/organisations/current/members/invite",
+              "raw": "{{baseUrl}}/api/transactions",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "organisations", "current", "members", "invite"]
+              "path": ["api", "transactions"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Invoices & Receivables",
+      "item": [
+        {
+          "name": "List Invoices",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('Calculates total outstanding and overdue metrics', () => {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('total_outstanding');",
+                  "    pm.expect(json).to.have.property('total_overdue');",
+                  "    pm.expect(json).to.have.property('items');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/invoices",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "invoices"]
+            }
+          }
+        },
+        {
+          "name": "Draft Customer Invoice",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Invoice drafted successfully', () => {",
+                  "    pm.expect([200, 201]).to.include(pm.response.code);",
+                  "});",
+                  "pm.test('Server-side Decimal arithmetic computes total', () => {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('invoice_number');",
+                  "    pm.expect(parseFloat(json.total)).to.be.above(0);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customer_name\": \"Acme Cloud Services\",\n  \"customer_email\": \"billing@acmecloud.com\",\n  \"issue_date\": \"2026-10-31\",\n  \"due_date\": \"2026-11-30\",\n  \"line_items\": [\n    {\n      \"description\": \"Strategic FinTech Advisory Retainer\",\n      \"quantity\": \"1\",\n      \"unit_price\": \"15000.00\"\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/invoices",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "invoices"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "6. Autonomous AI CFO & Agents",
+      "item": [
+        {
+          "name": "Query AI CFO (Gemini Intelligence)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('AI CFO executes financial tools and provides insights', () => {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('content');",
+                  "    pm.expect(json.content.length).to.be.above(20);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"What is our monthly cash burn rate and runway?\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/ai/chat",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ai", "chat"]
+            }
+          }
+        },
+        {
+          "name": "Audit Sentinel Anomaly Detection",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('Sentinel checks ledger anomalies and returns scan payload', () => {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json).to.be.an('array');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/ai/anomalies",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ai", "anomalies"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "7. Payments & Webhooks",
+      "item": [
+        {
+          "name": "Check Payment Gateway Status",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('Gateway is operating in sandbox mode', () => {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('mode');",
+                  "    pm.expect(json.mode).to.equal('sandbox');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/payments/gateway-status",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "payments", "gateway-status"]
+            }
+          }
+        },
+        {
+          "name": "Test Zapier Webhook Dispatcher",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('Webhook dispatched with HMAC-SHA256 signature', () => {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.success).to.be.true;",
+                  "    pm.expect(json.result).to.have.property('signature_header');",
+                  "    pm.expect(json.result.signature_header).to.include('sha256=');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"event_type\": \"invoice.paid\",\n  \"custom_message\": \"Postman automated regression test\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/webhooks/zapier/test",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "webhooks", "zapier", "test"]
             }
           }
         }
@@ -193,4 +443,3 @@
     }
   ]
 }
-

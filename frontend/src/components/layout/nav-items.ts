@@ -35,12 +35,13 @@ export const NAV_ITEMS: NavItem[] = [
   },
   {
     title: "Analytics",
-    href: "/cash-flow",
+    href: "/analytics",
     icon: TrendingUp,
     children: [
-      { title: "Revenue", href: "/reports?report_type=pnl" },
-      { title: "Expenses", href: "/reports?report_type=pnl" },
-      { title: "Profit & Loss", href: "/reports?report_type=pnl" },
+      { title: "Revenue", href: "/analytics?tab=revenue" },
+      { title: "Expenses", href: "/analytics?tab=expenses" },
+      { title: "Profit & Loss", href: "/analytics?tab=pnl" },
+      { title: "Cash Flow", href: "/analytics?tab=cashflow" },
     ],
   },
   {

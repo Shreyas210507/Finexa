@@ -1,5 +1,6 @@
 import { supabase } from "./supabase";
 import {
+  ProfileResponse,
   CurrentUserResponse,
   OrganisationResponse,
   HealthResponse,
@@ -17,6 +18,7 @@ import {
   AIConversationBrief,
   AIMessageDetail,
   AIAgentExecution,
+  AgentStatusItem,
   CashFlowForecastResponse,
   SimulateRequest,
   SimulationResult,
@@ -77,6 +79,19 @@ class APIClient {
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
       throw new Error(err.detail || "Onboarding failed");
+    }
+    return res.json();
+  }
+
+  async updateProfile(payload: { name?: string; avatar_url?: string }): Promise<ProfileResponse> {
+    const res = await fetch(`${API_BASE_URL}/api/auth/profile`, {
+      method: "PATCH",
+      headers: await this.getHeaders(),
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || "Failed to update profile");
     }
     return res.json();
   }
@@ -196,6 +211,31 @@ class APIClient {
     return `${API_BASE_URL}/api/transactions/export/csv`;
   }
 
+  async importTransactionsCSV(
+    file: File,
+    orgId?: string
+  ): Promise<{
+    total_rows: number;
+    imported: number;
+    skipped_duplicates: number;
+    errors: string[];
+  }> {
+    const text = await file.text();
+    const res = await fetch(`${API_BASE_URL}/api/transactions/import/csv`, {
+      method: "POST",
+      headers: await this.getHeaders(orgId),
+      body: JSON.stringify({
+        csv_content: text,
+        filename: file.name,
+      }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || "Failed to import CSV");
+    }
+    return res.json();
+  }
+
   // Invoices API
   async getInvoices(status?: string, orgId?: string): Promise<InvoiceListResponse> {
     const url = status
@@ -220,6 +260,23 @@ class APIClient {
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
       throw new Error(err.detail || "Failed to create invoice");
+    }
+    return res.json();
+  }
+
+  async updateInvoiceStatus(
+    invoiceId: string,
+    status: "Draft" | "Sent" | "Paid" | "Overdue" | "Cancelled",
+    orgId?: string
+  ): Promise<InvoiceResponse> {
+    const res = await fetch(`${API_BASE_URL}/api/invoices/${invoiceId}/status`, {
+      method: "PATCH",
+      headers: await this.getHeaders(orgId),
+      body: JSON.stringify({ status }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || "Failed to update invoice status");
     }
     return res.json();
   }
@@ -275,8 +332,35 @@ class APIClient {
     return res.json();
   }
 
-  async getAIAgentExecutions(orgId?: string): Promise<AIAgentExecution[]> {
-    const res = await fetch(`${API_BASE_URL}/api/ai/agents/executions`, {
+  async deleteAIConversation(conversationId: string, orgId?: string): Promise<void> {
+    const res = await fetch(`${API_BASE_URL}/api/ai/conversations/${conversationId}`, {
+      method: "DELETE",
+      headers: await this.getHeaders(orgId),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || "Failed to delete conversation");
+    }
+  }
+
+  async getAIAgentsStatus(orgId?: string): Promise<AgentStatusItem[]> {
+    const res = await fetch(`${API_BASE_URL}/api/ai/agents/status`, {
+      headers: await this.getHeaders(orgId),
+    });
+    if (!res.ok) return [];
+    return res.json();
+  }
+
+  async getAIAgentExecutions(
+    params?: { agent_name?: string; status?: string },
+    orgId?: string,
+  ): Promise<AIAgentExecution[]> {
+    const query = new URLSearchParams();
+    if (params?.agent_name) query.set("agent_name", params.agent_name);
+    if (params?.status) query.set("status", params.status);
+
+    const qs = query.toString() ? `?${query.toString()}` : "";
+    const res = await fetch(`${API_BASE_URL}/api/ai/agents/executions${qs}`, {
       headers: await this.getHeaders(orgId),
     });
     if (!res.ok) return [];
@@ -301,14 +385,31 @@ class APIClient {
     return res.json();
   }
 
-  async runAgentManually(agentName: string, orgId?: string): Promise<Record<string, unknown>> {
+  async runAgentManually(
+    agentName: string,
+    params?: Record<string, unknown>,
+    orgId?: string,
+  ): Promise<Record<string, unknown>> {
     const res = await fetch(`${API_BASE_URL}/api/ai/agents/run/${agentName}`, {
+      method: "POST",
+      headers: await this.getHeaders(orgId),
+      body: params ? JSON.stringify(params) : undefined,
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || `Failed to run agent ${agentName}`);
+    }
+    return res.json();
+  }
+
+  async triggerAgentOrchestration(orgId?: string): Promise<Record<string, unknown>> {
+    const res = await fetch(`${API_BASE_URL}/api/ai/agents/orchestrate`, {
       method: "POST",
       headers: await this.getHeaders(orgId),
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      throw new Error(err.detail || `Failed to run agent ${agentName}`);
+      throw new Error(err.detail || "Failed to trigger multi-agent orchestration");
     }
     return res.json();
   }
@@ -447,11 +548,11 @@ class APIClient {
     return res.json();
   }
 
-  async createPayPalOrder(invoiceId: string, orgId?: string): Promise<CreateOrderResponse> {
+  async createPayPalOrder(invoiceId: string, amount?: number, orgId?: string): Promise<CreateOrderResponse> {
     const res = await fetch(`${API_BASE_URL}/api/payments/create-order`, {
       method: "POST",
       headers: await this.getHeaders(orgId),
-      body: JSON.stringify({ invoice_id: invoiceId }),
+      body: JSON.stringify({ invoice_id: invoiceId, amount }),
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
@@ -483,6 +584,35 @@ class APIClient {
       const err = await res.json().catch(() => ({}));
       throw new Error(err.detail || "Failed to simulate payment");
     }
+    return res.json();
+  }
+
+  // Zapier Outbound Automation API
+  async testZapierWebhook(
+    webhookUrl?: string,
+    eventType?: string,
+    orgId?: string,
+  ): Promise<{ success: boolean; message: string; result: Record<string, unknown> }> {
+    const res = await fetch(`${API_BASE_URL}/api/webhooks/zapier/test`, {
+      method: "POST",
+      headers: await this.getHeaders(orgId),
+      body: JSON.stringify({
+        webhook_url: webhookUrl || undefined,
+        event_type: eventType || "invoice.paid",
+      }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || "Failed to dispatch Zapier webhook");
+    }
+    return res.json();
+  }
+
+  async getZapierDeliveries(orgId?: string): Promise<Array<Record<string, unknown>>> {
+    const res = await fetch(`${API_BASE_URL}/api/webhooks/zapier/deliveries`, {
+      headers: await this.getHeaders(orgId),
+    });
+    if (!res.ok) return [];
     return res.json();
   }
 }

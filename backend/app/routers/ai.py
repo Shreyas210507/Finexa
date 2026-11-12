@@ -1,7 +1,8 @@
 import json
 import time
 import collections
-from typing import Dict, List, Optional
+from datetime import datetime, timezone
+from typing import Any, Dict, List, Optional
 import uuid
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import StreamingResponse
@@ -185,19 +186,158 @@ def get_conversation_messages(
     ]
 
 
-@router.get("/agents/executions", response_model=List[AgentExecutionResponse])
-def list_agent_executions(
+@router.delete("/conversations/{conversation_id}", status_code=status.HTTP_200_OK)
+def delete_conversation(
+    conversation_id: uuid.UUID,
     db: Session = Depends(get_db),
     current_org: Organisation = Depends(get_current_org),
 ):
-    """List agent execution runs and approval queue items."""
-    executions = (
-        db.query(AgentExecution)
-        .filter(AgentExecution.organisation_id == current_org.id)
-        .order_by(AgentExecution.started_at.desc())
-        .limit(30)
-        .all()
+    """Delete conversation and its message history."""
+    conv = (
+        db.query(AIConversation)
+        .filter(
+            AIConversation.id == conversation_id,
+            AIConversation.organisation_id == current_org.id,
+        )
+        .first()
     )
+    if not conv:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Conversation not found")
+
+    db.query(AIMessage).filter(AIMessage.conversation_id == conv.id).delete()
+    db.delete(conv)
+    db.commit()
+    return {"status": "ok", "deleted_conversation_id": str(conversation_id)}
+
+
+@router.get("/agents/status")
+def get_agents_status(
+    db: Session = Depends(get_db),
+    current_org: Organisation = Depends(get_current_org),
+):
+    """Retrieve real-time operational status, statistics, and tool capabilities for all 5 agents."""
+    agent_configs = [
+        {
+            "key": "cfo_orchestrator",
+            "name": "CFO Orchestrator Agent",
+            "role": "Strategic Routing & Context Management",
+            "description": "Coordinates specialized subagents, bounds conversation context, and invokes deterministic financial tools.",
+            "tool_list": ["calculate_cash_runway", "get_financial_summary", "identify_anomalies", "simulate_financial_scenario"],
+        },
+        {
+            "key": "cashflow_agent",
+            "name": "Cash Flow Agent",
+            "role": "Liquidity & Runway Monitor",
+            "description": "Monitors daily opening and closing cash, computes burn velocity, and signals runway shortfalls.",
+            "tool_list": ["calculate_cash_runway", "get_financial_summary", "generate_cashflow_forecast"],
+        },
+        {
+            "key": "invoice_agent",
+            "name": "Invoice Agent",
+            "role": "Billing & Collections Automation",
+            "description": "Drafts client invoices with server-verified totals and prepares overdue payment reminders in the approval queue.",
+            "tool_list": ["create_invoice_draft", "get_outstanding_invoices"],
+        },
+        {
+            "key": "audit_agent",
+            "name": "Audit Agent",
+            "role": "Anomaly & Variance Detection",
+            "description": "Scans organisation ledger for unusual amount deviations or unexpected vendor spikes without labelling fraud.",
+            "tool_list": ["identify_anomalies", "get_transactions", "get_expense_breakdown"],
+        },
+        {
+            "key": "strategy_agent",
+            "name": "Financial Strategy Agent",
+            "role": "What-If Simulator & Growth Advisory",
+            "description": "Evaluates hiring impacts, expense surges, and capital planning scenarios using deterministic models.",
+            "tool_list": ["simulate_financial_scenario", "calculate_cash_runway", "get_financial_summary"],
+        },
+    ]
+
+    result = []
+    for cfg in agent_configs:
+        key = cfg["key"]
+        last_exec = (
+            db.query(AgentExecution)
+            .filter(
+                AgentExecution.organisation_id == current_org.id,
+                AgentExecution.agent_type == key,
+            )
+            .order_by(AgentExecution.started_at.desc())
+            .first()
+        )
+
+        completed_count = (
+            db.query(AgentExecution)
+            .filter(
+                AgentExecution.organisation_id == current_org.id,
+                AgentExecution.agent_type == key,
+                AgentExecution.status == "completed",
+            )
+            .count()
+        )
+
+        pending_count = (
+            db.query(AgentExecution)
+            .filter(
+                AgentExecution.organisation_id == current_org.id,
+                AgentExecution.agent_type == key,
+                AgentExecution.status == "needs_approval",
+            )
+            .count()
+        )
+
+        error_count = (
+            db.query(AgentExecution)
+            .filter(
+                AgentExecution.organisation_id == current_org.id,
+                AgentExecution.agent_type == key,
+                AgentExecution.status == "failed",
+            )
+            .count()
+        )
+
+        status_val = "idle"
+        if pending_count > 0:
+            status_val = "needs_approval"
+        elif last_exec and last_exec.status == "running":
+            status_val = "running"
+        elif last_exec and last_exec.status == "failed":
+            status_val = "failed"
+        elif last_exec:
+            status_val = "completed"
+
+        result.append({
+            "key": key,
+            "name": cfg["name"],
+            "role": cfg["role"],
+            "description": cfg["description"],
+            "status": status_val,
+            "last_execution": last_exec.started_at.isoformat() if last_exec else None,
+            "tasks_completed": completed_count,
+            "tasks_awaiting_approval": pending_count,
+            "error_count": error_count,
+            "tool_list": cfg["tool_list"],
+        })
+
+    return result
+
+
+@router.get("/agents/executions", response_model=List[AgentExecutionResponse])
+def list_agent_executions(
+    agent_name: Optional[str] = None,
+    status: Optional[str] = None,
+    db: Session = Depends(get_db),
+    current_org: Organisation = Depends(get_current_org),
+):
+    """List agent execution runs and approval queue items with optional filters."""
+    q = db.query(AgentExecution).filter(AgentExecution.organisation_id == current_org.id)
+    if agent_name:
+        q = q.filter(AgentExecution.agent_type == agent_name)
+    if status:
+        q = q.filter(AgentExecution.status == status)
+
+    executions = q.order_by(AgentExecution.started_at.desc()).limit(50).all()
     return executions
 
 
@@ -226,18 +366,50 @@ def handle_approval_action(
             detail=f"Record is not awaiting approval (current status: {rec.status})",
         )
 
+    output_data = dict(rec.output_data or {})
+    events = list(output_data.get("timeline_events", []))
+
     if req.action == "approve":
         rec.status = "completed"
-        # If invoice draft was waiting for approval, promote from Draft to Sent
-        draft_data = rec.output_data.get("draft") if rec.output_data else None
+        draft_data = output_data.get("draft")
+        inv_number = draft_data.get("invoice_number", "Draft") if draft_data else "Draft"
         if draft_data and "invoice_id" in draft_data:
             inv = db.query(Invoice).filter(Invoice.id == uuid.UUID(draft_data["invoice_id"])).first()
             if inv:
                 inv.status = "Sent"
+
+        events.append({
+            "step": "action_executed",
+            "label": "Action Executed",
+            "detail": f"Controller approved {inv_number}. Status updated to Sent.",
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+        })
+        events.append({
+            "step": "result_confirmed",
+            "label": "Result Confirmed",
+            "detail": f"Invoice {inv_number} issued and recorded in receivables ledger.",
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+        })
     else:
         rec.status = "failed"
-        rec.error = req.reason or "Rejected by organisation owner"
+        reason_txt = req.reason or "Rejected by organisation owner"
+        rec.error = reason_txt
+        events.append({
+            "step": "action_executed",
+            "label": "Action Rejected",
+            "detail": f"Controller rejected proposed action: {reason_txt}",
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+        })
+        events.append({
+            "step": "result_confirmed",
+            "label": "Result Confirmed",
+            "detail": "Action rejected and draft cancelled without ledger impact.",
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+        })
 
+    output_data["timeline_events"] = events
+    rec.output_data = output_data
+    rec.completed_at = datetime.now(timezone.utc)
     db.commit()
     db.refresh(rec)
     return {"status": "ok", "action": req.action, "execution_status": rec.status}
@@ -246,22 +418,54 @@ def handle_approval_action(
 @router.post("/agents/run/{agent_name}", status_code=status.HTTP_200_OK)
 def run_agent_manually(
     agent_name: str,
+    params: Optional[Dict[str, Any]] = None,
     db: Session = Depends(get_db),
     current_org: Organisation = Depends(get_current_org),
     current_user: Profile = Depends(get_current_profile),
 ):
-    """Trigger an on-demand run of a specialized financial agent."""
-    if agent_name == "audit_agent":
+    """Trigger an on-demand run of a specialized financial agent with input validation."""
+    p = params or {}
+    if agent_name == "cfo_orchestrator":
+        agent = CFOOrchestratorAgent(db, current_org.id, current_user.id)
+        if p.get("mode") == "orchestration":
+            return agent.orchestrate_cross_agent_review()
+        prompt = p.get("prompt") or "Provide comprehensive financial health overview, burn rate, and runway."
+        return agent.execute(prompt)
+    elif agent_name == "audit_agent":
         agent = AuditAgent(db, current_org.id, current_user.id)
-        return agent.execute({})
+        return agent.execute(p)
     elif agent_name == "cashflow_agent":
         agent = CashFlowAgent(db, current_org.id, current_user.id)
-        return agent.execute({})
+        return agent.execute(p)
     elif agent_name == "strategy_agent":
         agent = FinancialStrategyAgent(db, current_org.id, current_user.id)
-        return agent.execute({"hire_count": 2, "salary_per_hire": 6000.0})
+        hire_count = int(p.get("hire_count", 2))
+        salary_per_hire = float(p.get("salary_per_hire", 6000.0))
+        return agent.execute({"hire_count": hire_count, "salary_per_hire": salary_per_hire})
     elif agent_name == "invoice_agent":
         agent = InvoiceAgent(db, current_org.id, current_user.id)
+        action = p.get("action", "check_receivables")
+        if action == "create_draft":
+            customer = p.get("customer_name", "Acme Corporation")
+            amount = float(p.get("amount", 8500.0))
+            desc = p.get("description", "Enterprise Cloud Infrastructure & Integration Q4")
+            return agent.execute({
+                "action": "create_draft",
+                "customer_name": customer,
+                "amount": amount,
+                "description": desc,
+            })
         return agent.execute({"action": "check_receivables"})
     else:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Unknown agent: {agent_name}")
+
+
+@router.post("/agents/orchestrate", status_code=status.HTTP_200_OK)
+def trigger_agent_orchestration(
+    db: Session = Depends(get_db),
+    current_org: Organisation = Depends(get_current_org),
+    current_user: Profile = Depends(get_current_profile),
+):
+    """Trigger coordinated multi-agent orchestration pipeline: CFO -> Cash Flow -> Invoice -> Audit."""
+    orchestrator = CFOOrchestratorAgent(db, current_org.id, current_user.id)
+    return orchestrator.orchestrate_cross_agent_review()

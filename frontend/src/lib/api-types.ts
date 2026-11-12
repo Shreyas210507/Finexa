@@ -41,7 +41,13 @@ export interface MemberResponse {
 export interface HealthResponse {
   status: string;
   database: string;
+  database_latency_ms?: number | null;
   supabase: string;
+  gemini_configured?: boolean;
+  gemini_model?: string;
+  paypal_configured?: boolean;
+  paypal_mode?: string;
+  webhooks_configured?: boolean;
   timestamp: string;
 }
 
@@ -57,6 +63,10 @@ export interface TransactionResponse {
   vendor_or_client?: string | null;
   reference?: string | null;
   invoice_id?: string | null;
+  source?: string;
+  source_reference?: string | null;
+  external_transaction_id?: string | null;
+  idempotency_key?: string | null;
   is_deleted: boolean;
   created_at: string;
   updated_at: string;
@@ -220,12 +230,50 @@ export interface AIMessageDetail {
   created_at: string;
 }
 
+export interface TimelineEvent {
+  step: "task_received" | "agent_activated" | "data_retrieved" | "analysis_completed" | "approval_requested" | "action_executed" | "result_confirmed" | "execution_failed" | "agent_handoff";
+  label: string;
+  detail: string;
+  timestamp: string;
+}
+
+export interface AgentStatusItem {
+  key: string;
+  name: string;
+  role: string;
+  description: string;
+  status: "idle" | "running" | "completed" | "needs_approval" | "failed";
+  last_execution: string | null;
+  tasks_completed: number;
+  tasks_awaiting_approval: number;
+  error_count: number;
+  tool_list: string[];
+}
+
+export interface AgentHandoff {
+  from: string;
+  to: string;
+  purpose: string;
+  result: string;
+}
+
 export interface AIAgentExecution {
   id: string;
   agent_type: string;
   status: "running" | "completed" | "needs_approval" | "failed";
   input_data: Record<string, unknown>;
-  output_data?: Record<string, unknown> | null;
+  output_data?: {
+    summary?: string;
+    draft?: Record<string, unknown>;
+    proposed_action?: string;
+    financial_impact?: string;
+    relevant_records?: Record<string, unknown>;
+    reason?: string;
+    timeline_events?: TimelineEvent[];
+    handoffs?: AgentHandoff[];
+    pipeline?: string[];
+    [key: string]: unknown;
+  } | null;
   tools_used?: string[] | null;
   error?: string | null;
   started_at: string;
@@ -355,13 +403,17 @@ export interface GatewayStatusResponse {
 export interface PaymentItemResponse {
   id: string;
   invoice_id?: string | null;
+  invoice_number?: string | null;
+  customer_name?: string | null;
   amount: string;
+  currency?: string | null;
   payment_date: string;
   method: string;
   status: string;
   paypal_order_id?: string | null;
   paypal_capture_id?: string | null;
   reference?: string | null;
+  reconciled?: boolean;
   created_at?: string | null;
 }
 
@@ -377,7 +429,9 @@ export interface CreateOrderResponse {
   status: string;
   approve_url?: string | null;
   invoice_number: string;
+  customer_name?: string | null;
   amount: string;
+  currency?: string | null;
   demo?: boolean;
 }
 

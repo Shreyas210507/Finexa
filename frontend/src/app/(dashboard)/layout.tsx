@@ -36,7 +36,7 @@ export default function DashboardLayout({
         const user = await apiClient.getCurrentUser();
         setUserData(user);
       } catch (err) {
-        console.error("Error fetching user data:", err);
+        console.warn("Backend profile sync unavailable:", err);
       } finally {
         setLoading(false);
       }
@@ -57,25 +57,62 @@ export default function DashboardLayout({
     };
   }, [router]);
 
+  // Phase 9: Signature Glass Reflection Pointer Tracking
+  useEffect(() => {
+    let ticking = false;
+
+    const handlePointerMove = (e: PointerEvent) => {
+      if (!ticking) {
+        requestAnimationFrame(() => {
+          const target = (e.target as HTMLElement)?.closest(
+            ".frosted-glass-card, .glass-card, [data-glass-surface]"
+          ) as HTMLElement | null;
+
+          if (target) {
+            const rect = target.getBoundingClientRect();
+            target.style.setProperty("--mouse-x", `${e.clientX - rect.left}px`);
+            target.style.setProperty("--mouse-y", `${e.clientY - rect.top}px`);
+          }
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+
+    window.addEventListener("pointermove", handlePointerMove, { passive: true });
+    return () => window.removeEventListener("pointermove", handlePointerMove);
+  }, []);
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center text-foreground">
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-8 h-8 border-2 border-[#8B7CFF] border-t-transparent rounded-full animate-spin" />
-          <p className="text-xs text-muted-foreground">Loading FINEXA Intelligence...</p>
+      <div className="min-h-screen bg-background flex items-center justify-center text-foreground relative overflow-hidden">
+        {/* Ambient Glow */}
+        <div className="pointer-events-none fixed top-[-20%] left-[-10%] w-[600px] h-[600px] rounded-full bg-[#4318FF]/15 blur-[120px] -z-10" />
+        <div className="pointer-events-none fixed top-[30%] right-[-10%] w-[500px] h-[500px] rounded-full bg-[#00F0FF]/10 blur-[140px] -z-10" />
+        <div className="flex flex-col items-center gap-3 relative z-10">
+          <div className="w-9 h-9 border-2 border-[#4318FF] border-t-transparent rounded-full animate-spin shadow-[0_0_15px_rgba(67,24,255,0.4)]" />
+          <p className="text-xs font-medium text-muted-foreground tracking-wide">Loading FINEXA Intelligence...</p>
         </div>
       </div>
     );
   }
 
   const orgName = userData?.current_org?.name || "Novastack Technologies";
-  const userEmail = userData?.profile?.name || "admin@novastack.io";
+  const userName = userData?.profile?.name || "User";
+  const userEmail = "admin@novastack.io";
 
   return (
     <ToastProvider>
-      <div className="min-h-screen bg-background text-foreground flex flex-col md:flex-row">
-        {/* Desktop Collapsible Sidebar */}
-        <Sidebar />
+      <div className="h-screen w-full bg-background text-foreground flex flex-col md:flex-row overflow-hidden relative">
+        {/* ═══════════════════════════════════════════════════
+            AMBIENT GLOW — SPATIAL 3D RADIAL GRADIENTS
+            ═══════════════════════════════════════════════════ */}
+        <div className="pointer-events-none fixed -top-40 -left-40 w-[650px] h-[650px] rounded-full bg-[#4318FF]/15 blur-[140px] -z-0" />
+        <div className="pointer-events-none fixed top-1/4 -right-40 w-[550px] h-[550px] rounded-full bg-[#00F0FF]/12 blur-[150px] -z-0" />
+        <div className="pointer-events-none fixed -bottom-40 left-1/3 w-[600px] h-[600px] rounded-full bg-[#4318FF]/10 blur-[160px] -z-0" />
+
+        {/* Desktop Collapsible Sidebar (Fixed to viewport, never scrolls with page) */}
+        <Sidebar className="shrink-0 z-20" />
 
         {/* Mobile Navigation Drawer */}
         <MobileDrawer
@@ -84,15 +121,29 @@ export default function DashboardLayout({
           orgName={orgName}
         />
 
-        {/* Main Content Area */}
-        <div className="flex-1 flex flex-col min-w-0">
+        {/* Main Content Area — Only this right container scrolls */}
+        <div className="flex-1 flex flex-col h-full overflow-y-auto overflow-x-hidden min-w-0 relative z-10 scrollbar-thin">
           <TopBar
             onOpenMobileMenu={() => setMobileDrawerOpen(true)}
             orgName={orgName}
             userEmail={userEmail}
+            userName={userName}
+            onUserNameChange={(newName) => {
+              setUserData((prev) =>
+                prev
+                  ? {
+                      ...prev,
+                      profile: {
+                        ...prev.profile,
+                        name: newName,
+                      },
+                    }
+                  : prev
+              );
+            }}
           />
 
-          <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto pb-24 md:pb-8">
+          <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto pb-24 md:pb-8 animate-in fade-in-50 duration-200">
             {children}
           </main>
         </div>

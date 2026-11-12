@@ -26,6 +26,29 @@ def get_current_user(
         .all()
     )
 
+    if not memberships and settings.DEMO_MODE:
+        from backend.app.dependencies import DEMO_DEFAULT_ORG_ID
+        demo_org = (
+            db.query(Organisation)
+            .filter(
+                (Organisation.id == DEMO_DEFAULT_ORG_ID)
+                | (Organisation.is_demo == True)
+            )
+            .first()
+        )
+        if not demo_org:
+            demo_org = db.query(Organisation).first()
+        if demo_org:
+            m = OrganisationMember(
+                user_id=profile.id,
+                organisation_id=demo_org.id,
+                role="owner",
+            )
+            db.add(m)
+            db.commit()
+            db.refresh(m)
+            memberships = [m]
+
     org_briefs = []
     current_org_brief = None
 

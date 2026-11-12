@@ -185,6 +185,42 @@ def get_invoice(db: Session, org_id: uuid.UUID, invoice_id: uuid.UUID) -> Option
     )
 
 
+def update_invoice_status(
+    db: Session,
+    org_id: uuid.UUID,
+    user_id: Optional[uuid.UUID],
+    invoice_id: uuid.UUID,
+    new_status: str,
+) -> Optional[Invoice]:
+    """Update invoice status with audit logging."""
+    invoice = get_invoice(db, org_id, invoice_id)
+    if not invoice:
+        return None
+
+    old_status = invoice.status
+    invoice.status = new_status
+    if new_status == "Paid":
+        invoice.amount_paid = invoice.total
+        invoice.balance = Decimal("0.00")
+
+    audit = AuditLog(
+        organisation_id=org_id,
+        user_id=user_id,
+        entity_type="invoice",
+        entity_id=invoice.id,
+        action="update_status",
+        changes={
+            "old_status": old_status,
+            "new_status": new_status,
+            "balance": str(invoice.balance),
+        },
+    )
+    db.add(audit)
+    db.commit()
+    db.refresh(invoice)
+    return invoice
+
+
 def generate_invoice_pdf(db: Session, org_id: uuid.UUID, invoice_id: uuid.UUID) -> Optional[bytes]:
     """Generate branded PDF invoice document using ReportLab."""
     invoice = get_invoice(db, org_id, invoice_id)

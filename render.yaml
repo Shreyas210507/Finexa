@@ -32,7 +32,7 @@ services:
       - key: GEMINI_API_KEY
         sync: false
       - key: GEMINI_MODEL
-        value: "gemini-2.5-flash"
+        value: "gemini-3.1-flash-lite"
       - key: AI_RATE_LIMIT_PER_MINUTE
         value: "20"
       - key: AI_MAX_TOOL_CALLS

@@ -2,7 +2,15 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { ArrowUpRight, ArrowDownRight, AlertTriangle, ArrowRight, Clock, ShieldAlert } from "lucide-react";
+import { ArrowUpRight, ArrowDownRight, AlertTriangle, ArrowRight, Clock, ShieldAlert, CheckCircle2, Inbox } from "lucide-react";
+
+export interface ActivityAlertItem {
+  id: string;
+  title: string;
+  subtitle: string;
+  type: string;
+  href: string;
+}
 
 interface RecentActivityFeedProps {
   transactions?: Array<{
@@ -13,54 +21,48 @@ interface RecentActivityFeedProps {
     type: string;
     amount: string;
   }>;
+  alerts?: ActivityAlertItem[];
 }
 
-export function RecentActivityFeed({ transactions }: RecentActivityFeedProps) {
+export function RecentActivityFeed({ transactions, alerts = [] }: RecentActivityFeedProps) {
   const [activeTab, setActiveTab] = useState<"transactions" | "alerts">("transactions");
+  const cardRef = React.useRef<HTMLDivElement | null>(null);
 
-  const sampleTxs = transactions && transactions.length > 0 ? transactions.slice(0, 5) : [
-    { id: "1", description: "Apex Health Monthly Retainer", category: "Revenue", date: "Oct 28", type: "income", amount: "38000.00" },
-    { id: "2", description: "AWS Cloud Infrastructure", category: "Infrastructure", date: "Oct 26", type: "expense", amount: "18500.00" },
-    { id: "3", description: "Pacific Logistics Invoicing", category: "Revenue", date: "Oct 22", type: "income", amount: "42000.00" },
-    { id: "4", description: "Engineering Payroll Oct 2026", category: "Payroll", date: "Oct 20", type: "expense", amount: "55000.00" },
-    { id: "5", description: "JetBrains & OpenAI Licenses", category: "Software", date: "Oct 15", type: "expense", amount: "4200.00" },
-  ];
+  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (cardRef.current) {
+      const rect = cardRef.current.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      cardRef.current.style.setProperty("--mouse-x", `${x}px`);
+      cardRef.current.style.setProperty("--mouse-y", `${y}px`);
+    }
+  };
 
-  const alerts = [
-    {
-      id: "a1",
-      title: "Invoice Overdue — Pacific Logistics",
-      subtitle: "$18,000.00 overdue since Oct 12, 2026. Follow-up dispatched.",
-      type: "overdue",
-      href: "/invoices",
-    },
-    {
-      id: "a2",
-      title: "Runway Contraction Alert",
-      subtitle: "Trailing 3M burn rate of $51,166.67/mo requires monitoring.",
-      type: "runway",
-      href: "/forecasts",
-    },
-    {
-      id: "a3",
-      title: "Unusual Vendor Expense Detected",
-      subtitle: "Crestview Advisory $13,000.00 flagged by statistical sentinel.",
-      type: "anomaly",
-      href: "/ai-agents",
-    },
-  ];
+  const handlePointerLeave = () => {
+    if (cardRef.current) {
+      cardRef.current.style.setProperty("--mouse-x", "-999px");
+      cardRef.current.style.setProperty("--mouse-y", "-999px");
+    }
+  };
+
+  const displayTxs = transactions && transactions.length > 0 ? transactions.slice(0, 5) : [];
 
   return (
-    <div className="rounded-3xl border border-border bg-card p-6 shadow-sm flex flex-col justify-between">
+    <div
+      ref={cardRef}
+      onPointerMove={handlePointerMove}
+      onPointerLeave={handlePointerLeave}
+      className="rounded-3xl frosted-glass-card p-6 shadow-xl flex flex-col justify-between"
+    >
       {/* Header Tabs */}
-      <div className="flex items-center justify-between pb-3 border-b border-border/60">
-        <div className="flex items-center gap-2 bg-muted/50 p-1 rounded-full border border-border">
+      <div className="flex items-center justify-between pb-3 border-b border-white/10">
+        <div className="flex items-center gap-1.5 bg-white/5 p-1 rounded-full border border-white/10">
           <button
             type="button"
             onClick={() => setActiveTab("transactions")}
             className={`text-xs font-bold px-3 py-1 rounded-full transition-all ${
               activeTab === "transactions"
-                ? "bg-foreground text-background dark:bg-white dark:text-[#111019] shadow-sm"
+                ? "bg-[#4318FF] text-white shadow-sm"
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
@@ -71,18 +73,18 @@ export function RecentActivityFeed({ transactions }: RecentActivityFeedProps) {
             onClick={() => setActiveTab("alerts")}
             className={`text-xs font-bold px-3 py-1 rounded-full transition-all flex items-center gap-1.5 ${
               activeTab === "alerts"
-                ? "bg-foreground text-background dark:bg-white dark:text-[#111019] shadow-sm"
+                ? "bg-[#4318FF] text-white shadow-sm"
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
             <span>Alerts</span>
-            <span className="h-1.5 w-1.5 rounded-full bg-[#F07878]" />
+            {alerts.length > 0 && <span className="h-1.5 w-1.5 rounded-full bg-[#F07878] dot-pulse" />}
           </button>
         </div>
 
         <Link
           href={activeTab === "transactions" ? "/transactions" : "/ai-agents"}
-          className="text-xs font-bold text-[#8B7CFF] hover:underline flex items-center gap-1"
+          className="text-xs font-bold text-[#4318FF] dark:text-[#818CF8] hover:underline flex items-center gap-1"
         >
           <span>View All</span>
           <ArrowRight className="w-3.5 h-3.5" />
@@ -90,47 +92,67 @@ export function RecentActivityFeed({ transactions }: RecentActivityFeedProps) {
       </div>
 
       {/* Content List */}
-      <div className="divide-y divide-border/60 mt-2">
+      <div className="divide-y divide-white/5 mt-2 min-h-[220px]">
         {activeTab === "transactions" ? (
-          sampleTxs.map((tx) => (
-            <div key={tx.id} className="py-2.5 flex items-center justify-between gap-3 text-xs">
-              <div className="flex items-center gap-2.5 min-w-0">
+          displayTxs.length === 0 ? (
+            <div className="py-12 text-center text-xs text-muted-foreground">
+              <Inbox className="w-7 h-7 mx-auto mb-2 text-muted-foreground/60" />
+              <p className="font-semibold text-foreground">No recent transactions recorded</p>
+              <p className="text-[11px] text-muted-foreground mt-0.5">
+                Ingest transactions via CSV or record manually in the ledger.
+              </p>
+            </div>
+          ) : (
+            displayTxs.map((tx) => (
+              <div key={tx.id} className="py-2.5 flex items-center justify-between gap-3 text-xs group hover:bg-white/5 px-2 rounded-xl transition-colors">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div
+                    className={`h-7 w-7 rounded-xl flex items-center justify-center shrink-0 border ${
+                      tx.type === "income"
+                        ? "bg-[#34D399]/15 border-[#34D399]/30 text-[#34D399]"
+                        : "bg-[#F07878]/15 border-[#F07878]/30 text-[#F07878]"
+                    }`}
+                  >
+                    {tx.type === "income" ? (
+                      <ArrowDownRight className="w-3.5 h-3.5" />
+                    ) : (
+                      <ArrowUpRight className="w-3.5 h-3.5" />
+                    )}
+                  </div>
+                  <div className="min-w-0">
+                    <div className="font-semibold text-foreground truncate group-hover:text-white transition-colors">{tx.description}</div>
+                    <div className="text-[11px] text-muted-foreground font-financial">{tx.date} • {tx.category}</div>
+                  </div>
+                </div>
+
                 <div
-                  className={`h-7 w-7 rounded-full flex items-center justify-center shrink-0 ${
-                    tx.type === "income"
-                      ? "bg-[#48D597]/15 text-[#48D597]"
-                      : "bg-[#F07878]/15 text-[#F07878]"
+                  className={`font-financial font-extrabold shrink-0 ${
+                    tx.type === "income" ? "text-[#34D399]" : "text-[#F5F4FA]"
                   }`}
                 >
-                  {tx.type === "income" ? (
-                    <ArrowDownRight className="w-3.5 h-3.5" />
-                  ) : (
-                    <ArrowUpRight className="w-3.5 h-3.5" />
-                  )}
-                </div>
-                <div className="min-w-0">
-                  <div className="font-semibold text-foreground truncate">{tx.description}</div>
-                  <div className="text-[11px] text-muted-foreground">{tx.date} • {tx.category}</div>
+                  {tx.type === "income"
+                    ? `+$${parseFloat(tx.amount || "0").toLocaleString("en-US", { minimumFractionDigits: 2 })}`
+                    : `-$${parseFloat(tx.amount || "0").toLocaleString("en-US", { minimumFractionDigits: 2 })}`}
                 </div>
               </div>
-
-              <div
-                className={`font-bold tabular-nums shrink-0 ${
-                  tx.type === "income" ? "text-[#48D597]" : "text-foreground"
-                }`}
-              >
-                {tx.type === "income" ? `+$${parseFloat(tx.amount).toLocaleString()}` : `-$${parseFloat(tx.amount).toLocaleString()}`}
-              </div>
-            </div>
-          ))
+            ))
+          )
+        ) : alerts.length === 0 ? (
+          <div className="py-12 text-center text-xs text-muted-foreground">
+            <CheckCircle2 className="w-7 h-7 mx-auto mb-2 text-[#34D399]/70" />
+            <p className="font-semibold text-foreground">All systems nominal</p>
+            <p className="text-[11px] text-muted-foreground mt-0.5">
+              No financial alerts or overdue anomalies currently flagged.
+            </p>
+          </div>
         ) : (
           alerts.map((al) => (
             <Link
               key={al.id}
               href={al.href}
-              className="py-2.5 flex items-start gap-3 text-xs hover:bg-muted/30 p-2 rounded-xl transition-colors"
+              className="py-2.5 flex items-start gap-3 text-xs hover:bg-white/5 p-2 rounded-xl transition-colors"
             >
-              <div className="h-7 w-7 rounded-full bg-[#F07878]/15 text-[#F07878] flex items-center justify-center shrink-0 mt-0.5">
+              <div className="h-7 w-7 rounded-xl bg-[#F07878]/15 border border-[#F07878]/30 text-[#F07878] flex items-center justify-center shrink-0 mt-0.5">
                 {al.type === "anomaly" ? (
                   <ShieldAlert className="w-3.5 h-3.5" />
                 ) : al.type === "runway" ? (
@@ -152,4 +174,3 @@ export function RecentActivityFeed({ transactions }: RecentActivityFeedProps) {
     </div>
   );
 }
-

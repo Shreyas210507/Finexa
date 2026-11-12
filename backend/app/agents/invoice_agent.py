@@ -28,9 +28,20 @@ class InvoiceAgent(BaseAgent):
                 })
                 tools_used.append("create_invoice_draft")
 
+                tot = float(draft_res.data.get("total", params["amount"]))
                 output = {
-                    "summary": f"Prepared Draft invoice {draft_res.data['invoice_number']} for {params['customer_name']} (${draft_res.data['total']}). Approval required before delivery.",
+                    "summary": f"Prepared Draft invoice {draft_res.data['invoice_number']} for {params['customer_name']} (${tot:,.2f}). Approval required before delivery.",
                     "draft": draft_res.data,
+                    "proposed_action": f"Issue Invoice {draft_res.data['invoice_number']} to {params['customer_name']}",
+                    "financial_impact": f"+${tot:,.2f} Accounts Receivable",
+                    "relevant_records": {
+                        "invoice_id": draft_res.data["invoice_id"],
+                        "invoice_number": draft_res.data["invoice_number"],
+                        "customer": params["customer_name"],
+                        "amount": f"{tot:,.2f}",
+                        "due_date": draft_res.data.get("due_date", "Net 30"),
+                    },
+                    "reason": params.get("reason") or "Automated receivables schedule generation requiring controller sign-off.",
                     "tool_results": [draft_res.model_dump()],
                 }
                 # Transition status to needs_approval

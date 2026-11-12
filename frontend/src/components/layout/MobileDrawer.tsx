@@ -40,12 +40,12 @@ export function MobileDrawer({
       />
 
       {/* Drawer Body */}
-      <div className="relative z-50 w-4/5 max-w-xs bg-panel h-full border-r border-border shadow-2xl flex flex-col justify-between">
+      <div className="relative z-50 w-4/5 max-w-xs frosted-glass-modal h-full border-r border-border shadow-2xl flex flex-col justify-between">
         {/* Header */}
         <div className="flex h-16 items-center justify-between px-4 border-b border-border">
           <div className="flex items-center gap-2.5">
-            <div className="relative flex h-8 w-8 items-center justify-center rounded-full bg-[#1F1E2C] border border-[#8B7CFF]/30">
-              <span className="h-3 w-3 rounded-full bg-[#48D597] shadow-[0_0_8px_#48D597]" />
+            <div className="relative flex h-8 w-8 items-center justify-center rounded-full bg-muted dark:bg-[#1F1E2C] border border-[#8B7CFF]/30">
+              <span className="h-3 w-3 rounded-full bg-[#34D399] shadow-[0_0_8px_#34D399]" />
             </div>
             <span className="text-base font-extrabold tracking-wider text-foreground">
               FINEXA

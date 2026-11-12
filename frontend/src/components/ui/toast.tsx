@@ -47,21 +47,21 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
           <div
             key={toast.id}
             className={cn(
-              "pointer-events-auto flex items-start gap-3 p-4 rounded-[10px] border shadow-lg transition-all duration-300 animate-in slide-in-from-bottom-2",
-              toast.type === "success" && "bg-card border-[#22C55E]/40 text-foreground",
-              toast.type === "error" && "bg-card border-[#EF4444]/40 text-foreground",
-              toast.type === "info" && "bg-card border-[#315BFF]/40 text-foreground"
+              "pointer-events-auto flex items-start gap-3 p-4 rounded-xl border shadow-lg transition-all duration-300 animate-in slide-in-from-bottom-2",
+              toast.type === "success" && "bg-card border-[#48D597]/40 text-foreground",
+              toast.type === "error" && "bg-card border-[#F07878]/40 text-foreground",
+              toast.type === "info" && "bg-card border-[#8B7CFF]/40 text-foreground"
             )}
           >
             <div className="shrink-0 mt-0.5">
               {toast.type === "success" && (
-                <CheckCircle2 className="w-5 h-5 text-[#22C55E]" />
+                <CheckCircle2 className="w-5 h-5 text-[#48D597]" />
               )}
               {toast.type === "error" && (
-                <AlertCircle className="w-5 h-5 text-[#EF4444]" />
+                <AlertCircle className="w-5 h-5 text-[#F07878]" />
               )}
               {toast.type === "info" && (
-                <Info className="w-5 h-5 text-[#315BFF]" />
+                <Info className="w-5 h-5 text-[#8B7CFF]" />
               )}
             </div>
             <div className="flex-1">

@@ -1,0 +1,25 @@
+{
+  "id": "finexa-local-env",
+  "name": "FINEXA Local Environment",
+  "values": [
+    {
+      "key": "baseUrl",
+      "value": "http://127.0.0.1:8000",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "authToken",
+      "value": "demo-token",
+      "type": "secret",
+      "enabled": true
+    },
+    {
+      "key": "organisationId",
+      "value": "00000000-0000-0000-0000-000000000001",
+      "type": "default",
+      "enabled": true
+    }
+  ]
+}
+

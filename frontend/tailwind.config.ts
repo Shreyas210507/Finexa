@@ -36,17 +36,28 @@ export default {
         ring: "var(--ring)",
         positive: {
           DEFAULT: "var(--positive)",
-          soft: "rgba(72, 213, 151, 0.15)",
+          soft: "rgba(52, 211, 153, 0.15)",
         },
         negative: {
           DEFAULT: "var(--negative)",
           soft: "rgba(240, 120, 120, 0.15)",
         },
+        warning: {
+          DEFAULT: "var(--warning)",
+          soft: "rgba(245, 158, 11, 0.15)",
+        },
+        info: {
+          DEFAULT: "var(--info)",
+          soft: "rgba(129, 140, 248, 0.15)",
+        },
         fintech: {
-          bg: "#111019",
-          sidebar: "#191823",
-          card: "#201F2B",
-          cardElevated: "#272532",
+          bg: "#050507",
+          sidebar: "#0A0A0F",
+          card: "rgba(255, 255, 255, 0.02)",
+          cardElevated: "rgba(255, 255, 255, 0.04)",
+          violet: "#4318FF",
+          cyan: "#00F0FF",
+          emerald: "#34D399",
           purple: "#8B7CFF",
           purpleLight: "#A78BFA",
           green: "#48D597",
@@ -67,13 +78,28 @@ export default {
         sm: "8px",
       },
       fontFamily: {
-        sans: ["Inter", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "Roboto", "sans-serif"],
+        sans: ["var(--font-sans)", "Plus Jakarta Sans", "Inter", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "Roboto", "sans-serif"],
+        mono: ["var(--font-mono)", "JetBrains Mono", "Fira Code", "monospace"],
       },
       backgroundImage: {
         "fintech-ai": "linear-gradient(135deg, #1C1936 0%, #221D42 50%, #17152B 100%)",
-        "fintech-ai-glow": "radial-gradient(circle at 50% 0%, rgba(139, 124, 255, 0.25) 0%, transparent 70%)",
-        "fintech-gradient": "linear-gradient(135deg, #8B7CFF 0%, #A78BFA 100%)",
-        "fintech-pill": "linear-gradient(135deg, rgba(139, 124, 255, 0.2) 0%, rgba(167, 139, 250, 0.1) 100%)",
+        "fintech-ai-glow": "radial-gradient(circle at 50% 0%, rgba(67, 24, 255, 0.25) 0%, transparent 70%)",
+        "fintech-gradient": "linear-gradient(135deg, #4318FF 0%, #00F0FF 100%)",
+        "fintech-pill": "linear-gradient(135deg, rgba(67, 24, 255, 0.2) 0%, rgba(0, 240, 255, 0.1) 100%)",
+      },
+      keyframes: {
+        "pulse-glow": {
+          "0%, 100%": { opacity: "0.3" },
+          "50%": { opacity: "0.6" },
+        },
+        "shimmer-rotate": {
+          "0%": { transform: "rotate(0deg)" },
+          "100%": { transform: "rotate(360deg)" },
+        },
+      },
+      animation: {
+        "pulse-glow": "pulse-glow 3s ease-in-out infinite",
+        "shimmer-rotate": "shimmer-rotate 8s linear infinite",
       },
     },
   },

@@ -12,15 +12,14 @@ export function ThemeToggle({ className = "" }: { className?: string }) {
       onClick={toggleTheme}
       type="button"
       aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} theme`}
-      className={`p-2 rounded-lg border border-border bg-card/60 hover:bg-card text-foreground transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center ${className}`}
+      className={`p-2 rounded-full border border-border bg-card/60 hover:bg-card text-foreground transition-colors min-h-[38px] min-w-[38px] flex items-center justify-center ${className}`}
       title={`Switch to ${theme === "dark" ? "light" : "dark"} theme`}
     >
       {theme === "dark" ? (
-        <Sun className="w-4 h-4 text-[#20D9F2]" />
+        <Sun className="w-4 h-4 text-[#F59E0B]" />
       ) : (
-        <Moon className="w-4 h-4 text-[#315BFF]" />
+        <Moon className="w-4 h-4 text-[#8B7CFF]" />
       )}
     </button>
   );
 }
-

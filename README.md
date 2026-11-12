@@ -28,7 +28,7 @@ Built for **Novastack Technologies** (a 9-person US B2B startup), FINEXA handles
 | Capability | Description |
 |---|---|
 | **📊 Financial Dashboard** | Real-time KPIs: cash balance, burn rate, runway, revenue growth, expense ratios — all Decimal-precise |
-| **💰 Transaction Ledger** | Full CRUD, search, filter, sort, pagination, and CSV export with category breakdowns |
+| **💰 Transaction Ledger** | Full CRUD, search, filter, sort, pagination, CSV export, and statement CSV ingestion with SHA-256 deduplication |
 | **📄 Invoice Management** | Auto-numbered invoices (`INV-YYYY-NNNN`), line items, tax computation, branded PDF generation via ReportLab |
 | **📈 Cash Flow Forecasting** | 30/90/180-day projections with daily burn trajectories, ±10%/±20% uncertainty cones, shortage/depletion detection |
 | **🧪 What-If Simulator** | Pure Decimal scenarios: hiring expansion, OpEx surge, revenue shifts — before/after burn & runway comparison |
@@ -156,7 +156,7 @@ finexa/
 │   │   ├── dependencies.py   # Auth, org, RBAC dependencies
 │   │   └── main.py           # FastAPI application entry point
 │   ├── alembic/              # Database migrations
-│   ├── tests/                # Pytest test suite (48+ tests)
+│   ├── tests/                # Pytest test suite (51 tests, 100% pass)
 │   └── requirements.txt      # Python dependencies
 ├── frontend/
 │   ├── src/app/              # Next.js App Router pages
@@ -180,6 +180,7 @@ finexa/
 | [ARCHITECTURE.md](./ARCHITECTURE.md) | System architecture deep dive |
 | [API.md](./API.md) | Complete REST API reference |
 | [SETUP.md](./SETUP.md) | Local development setup guide |
+| [docs/REAL_DATA_AUDIT.md](./docs/REAL_DATA_AUDIT.md) | Real data migration audit & hardcoded inventory |
 | [docs/PAYPAL.md](./docs/PAYPAL.md) | PayPal integration guide |
 | [docs/FINANCIAL_DEFINITIONS.md](./docs/FINANCIAL_DEFINITIONS.md) | Financial metric definitions |
 | [docs/SUPABASE_PRODUCTION_GUIDE.md](./docs/SUPABASE_PRODUCTION_GUIDE.md) | Production Supabase configuration |
@@ -190,7 +191,7 @@ finexa/
 ## Testing
 
 ```bash
-# Run full backend test suite (48+ tests)
+# Run full backend test suite (51 tests)
 $env:PYTHONPATH="."; pytest backend/tests -v
 
 # Run frontend production build verification

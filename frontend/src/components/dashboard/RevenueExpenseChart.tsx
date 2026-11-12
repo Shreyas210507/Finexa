@@ -10,7 +10,7 @@ import {
   Tooltip,
   CartesianGrid,
 } from "recharts";
-import { Activity } from "lucide-react";
+import { Activity, BarChart2 } from "lucide-react";
 
 interface ChartPoint {
   month: string;
@@ -21,35 +21,53 @@ interface ChartPoint {
 interface RevenueExpenseChartProps {
   data?: ChartPoint[];
   period: string;
+  loading?: boolean;
   onPeriodChange?: (p: string) => void;
 }
 
 export function RevenueExpenseChart({
   data,
   period,
+  loading = false,
   onPeriodChange,
 }: RevenueExpenseChartProps) {
-  // Default benchmark dataset if loading
-  const chartData = data && data.length > 0 ? data : [
-    { month: "Jan", revenue: 85000, expenses: 95000 },
-    { month: "Feb", revenue: 92000, expenses: 102000 },
-    { month: "Mar", revenue: 105000, expenses: 110000 },
-    { month: "Apr", revenue: 115000, expenses: 125000 },
-    { month: "May", revenue: 122000, expenses: 140000 },
-    { month: "Jun", revenue: 130000, expenses: 155000 },
-    { month: "Jul", revenue: 138000, expenses: 172000 },
-    { month: "Aug", revenue: 145000, expenses: 185000 },
-    { month: "Sep", revenue: 138000, expenses: 192000 },
-    { month: "Oct", revenue: 142000, expenses: 200500 },
-  ];
+  const cardRef = React.useRef<HTMLDivElement | null>(null);
+
+  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (cardRef.current) {
+      const rect = cardRef.current.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      cardRef.current.style.setProperty("--mouse-x", `${x}px`);
+      cardRef.current.style.setProperty("--mouse-y", `${y}px`);
+    }
+  };
+
+  const handlePointerLeave = () => {
+    if (cardRef.current) {
+      cardRef.current.style.setProperty("--mouse-x", "-999px");
+      cardRef.current.style.setProperty("--mouse-y", "-999px");
+    }
+  };
+
+  const chartData = data || [];
+  const hasData = chartData.length > 0;
 
   return (
-    <div className="rounded-3xl border border-border bg-card p-6 shadow-sm flex flex-col justify-between">
+    <div
+      ref={cardRef}
+      onPointerMove={handlePointerMove}
+      onPointerLeave={handlePointerLeave}
+      className="rounded-3xl frosted-glass-card p-6 shadow-xl flex flex-col justify-between relative overflow-hidden"
+    >
+      {/* Background radial glow */}
+      <div className="pointer-events-none absolute -top-16 -right-16 w-48 h-48 rounded-full bg-[#4318FF]/10 blur-3xl" />
+
       {/* Header Row */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 gap-3 relative z-10">
         <div className="flex items-center gap-2.5">
-          <div className="h-8 w-8 rounded-full bg-muted/60 flex items-center justify-center text-muted-foreground">
-            <Activity className="w-4 h-4 text-[#8B7CFF]" />
+          <div className="h-8 w-8 rounded-xl bg-[#4318FF]/10 border border-[#4318FF]/20 flex items-center justify-center text-[#4318FF] dark:text-[#818CF8]">
+            <Activity className="w-4 h-4" />
           </div>
           <div>
             <h3 className="text-sm font-bold text-foreground">Revenue vs. Expenses</h3>
@@ -63,15 +81,15 @@ export function RevenueExpenseChart({
         <div className="flex items-center gap-4 text-xs">
           <div className="flex items-center gap-3">
             <span className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
-              <span className="h-2 w-2 rounded-full bg-[#48D597]" /> Revenue
+              <span className="h-2 w-2 rounded-full bg-[#34D399] shadow-[0_0_8px_#34D399]" /> Revenue
             </span>
             <span className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
-              <span className="h-2 w-2 rounded-full bg-[#8B7CFF]" /> Expenses
+              <span className="h-2 w-2 rounded-full bg-[#4318FF] shadow-[0_0_8px_#4318FF]" /> Expenses
             </span>
           </div>
 
           {onPeriodChange && (
-            <div className="flex items-center bg-muted/50 p-0.5 rounded-full border border-border">
+            <div className="flex items-center bg-white/5 p-0.5 rounded-full border border-white/10">
               {["7d", "30d", "90d", "12m"].map((p) => (
                 <button
                   key={p}
@@ -79,7 +97,7 @@ export function RevenueExpenseChart({
                   onClick={() => onPeriodChange(p)}
                   className={`text-[10px] font-bold px-2.5 py-1 rounded-full uppercase transition-all ${
                     period === p
-                      ? "bg-foreground text-background dark:bg-white dark:text-[#111019] shadow-sm"
+                      ? "bg-[#4318FF] text-white shadow-sm"
                       : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
@@ -91,80 +109,114 @@ export function RevenueExpenseChart({
         </div>
       </div>
 
-      {/* Recharts Area Chart */}
-      <div className="h-64 sm:h-72 w-full pt-2">
-        <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-            <defs>
-              <linearGradient id="revenueGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#48D597" stopOpacity={0.35} />
-                <stop offset="95%" stopColor="#48D597" stopOpacity={0.0} />
-              </linearGradient>
-              <linearGradient id="expenseGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#8B7CFF" stopOpacity={0.3} />
-                <stop offset="95%" stopColor="#8B7CFF" stopOpacity={0.0} />
-              </linearGradient>
-            </defs>
+      {/* Recharts Area Chart or Empty State */}
+      <div className="h-64 sm:h-72 w-full pt-2 relative z-10 flex items-center justify-center">
+        {loading ? (
+          <div className="flex flex-col items-center gap-2 text-muted-foreground">
+            <div className="w-7 h-7 border-2 border-[#4318FF] border-t-transparent rounded-full animate-spin" />
+            <span className="text-xs">Loading cash flow trajectory...</span>
+          </div>
+        ) : !hasData ? (
+          <div className="flex flex-col items-center justify-center text-center p-6 text-muted-foreground">
+            <BarChart2 className="w-10 h-10 mb-2 opacity-40 text-[#4318FF]" />
+            <p className="text-sm font-semibold text-foreground">No Timeline Records</p>
+            <p className="text-xs text-muted-foreground/80 mt-1 max-w-sm">
+              No income or expense data recorded for the {period.toUpperCase()} period. Ingest ledger data or record transactions to visualize trajectory.
+            </p>
+          </div>
+        ) : (
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+              <defs>
+                <linearGradient id="revenueGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#34D399" stopOpacity={0.35} />
+                  <stop offset="95%" stopColor="#34D399" stopOpacity={0.0} />
+                </linearGradient>
+                <linearGradient id="expenseGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#4318FF" stopOpacity={0.35} />
+                  <stop offset="95%" stopColor="#4318FF" stopOpacity={0.0} />
+                </linearGradient>
+                <filter id="neonGlowRevenue" x="-20%" y="-20%" width="140%" height="140%">
+                  <feDropShadow dx="0" dy="0" stdDeviation="3" floodColor="#34D399" floodOpacity="0.6" />
+                </filter>
+                <filter id="neonGlowExpense" x="-20%" y="-20%" width="140%" height="140%">
+                  <feDropShadow dx="0" dy="0" stdDeviation="3" floodColor="#4318FF" floodOpacity="0.6" />
+                </filter>
+              </defs>
 
-            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(150, 147, 165, 0.1)" />
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" opacity={0.4} />
 
-            <XAxis
-              dataKey="month"
-              axisLine={false}
-              tickLine={false}
-              tick={{ fill: "#9693A5", fontSize: 11, fontWeight: 500 }}
-              dy={10}
-            />
-            <YAxis
-              axisLine={false}
-              tickLine={false}
-              tick={{ fill: "#9693A5", fontSize: 10 }}
-              tickFormatter={(v) => `$${v >= 1000 ? `${Math.round(v / 1000)}k` : v}`}
-            />
+              <XAxis
+                dataKey="month"
+                axisLine={false}
+                tickLine={false}
+                tick={{ fill: "var(--muted-foreground)", fontSize: 11, fontWeight: 500 }}
+                dy={10}
+              />
+              <YAxis
+                axisLine={false}
+                tickLine={false}
+                tick={{ fill: "var(--muted-foreground)", fontSize: 10, fontFamily: "var(--font-mono)" }}
+                tickFormatter={(v) => `$${v >= 1000 ? `${Math.round(v / 1000)}k` : v}`}
+              />
 
-            <Tooltip
-              content={({ active, payload, label }) => {
-                if (active && payload && payload.length) {
-                  return (
-                    <div className="rounded-2xl border border-border bg-[#191823] p-3 text-white shadow-xl text-xs space-y-1.5 min-w-[130px]">
-                      <div className="font-bold text-[#A78BFA] pb-1 border-b border-white/10">
-                        {label} 2026
+              <Tooltip
+                cursor={{ stroke: "rgba(129, 140, 248, 0.3)", strokeWidth: 1.5, strokeDasharray: "4 4" }}
+                content={({ active, payload, label }) => {
+                  if (active && payload && payload.length) {
+                    const revItem = payload.find((p) => p.dataKey === "revenue");
+                    const expItem = payload.find((p) => p.dataKey === "expenses");
+                    const revVal = Number(revItem?.value ?? payload[0]?.value ?? 0);
+                    const expVal = Number(expItem?.value ?? payload[1]?.value ?? 0);
+                    const net = revVal - expVal;
+
+                    return (
+                      <div className="rounded-2xl border border-border frosted-glass-tooltip p-3.5 text-foreground shadow-xl text-xs space-y-1.5 min-w-[170px]">
+                        <div className="font-bold text-foreground pb-1 border-b border-border">
+                          {String(label)}
+                        </div>
+                        <div className="flex items-center justify-between text-[#10B981] dark:text-[#34D399] font-semibold font-financial">
+                          <span>● Revenue</span>
+                          <span>${revVal.toLocaleString("en-US", { minimumFractionDigits: 2 })}</span>
+                        </div>
+                        <div className="flex items-center justify-between text-[#818CF8] font-semibold font-financial">
+                          <span>● Expenses</span>
+                          <span>${expVal.toLocaleString("en-US", { minimumFractionDigits: 2 })}</span>
+                        </div>
+                        <div className={`flex items-center justify-between font-bold font-financial pt-1 border-t border-border ${net >= 0 ? "text-[#10B981] dark:text-[#34D399]" : "text-[#EF4444] dark:text-[#F07878]"}`}>
+                          <span>Net Cash Flow</span>
+                          <span>{net >= 0 ? `+$${net.toLocaleString("en-US", { minimumFractionDigits: 2 })}` : `-$${Math.abs(net).toLocaleString("en-US", { minimumFractionDigits: 2 })}`}</span>
+                        </div>
                       </div>
-                      <div className="flex items-center justify-between text-[#48D597] font-semibold">
-                        <span>● Revenue</span>
-                        <span>${Number(payload[0]?.value).toLocaleString()}</span>
-                      </div>
-                      <div className="flex items-center justify-between text-[#8B7CFF] font-semibold">
-                        <span>● Expenses</span>
-                        <span>${Number(payload[1]?.value).toLocaleString()}</span>
-                      </div>
-                    </div>
-                  );
-                }
-                return null;
-              }}
-            />
+                    );
+                  }
+                  return null;
+                }}
+              />
 
-            <Area
-              type="monotone"
-              dataKey="revenue"
-              stroke="#48D597"
-              strokeWidth={2.5}
-              fillOpacity={1}
-              fill="url(#revenueGrad)"
-              activeDot={{ r: 5, fill: "#48D597", stroke: "#111019", strokeWidth: 2 }}
-            />
-            <Area
-              type="monotone"
-              dataKey="expenses"
-              stroke="#8B7CFF"
-              strokeWidth={2.5}
-              fillOpacity={1}
-              fill="url(#expenseGrad)"
-              activeDot={{ r: 5, fill: "#8B7CFF", stroke: "#111019", strokeWidth: 2 }}
-            />
-          </AreaChart>
-        </ResponsiveContainer>
+              <Area
+                type="monotone"
+                dataKey="revenue"
+                stroke="#34D399"
+                strokeWidth={2.5}
+                fillOpacity={1}
+                fill="url(#revenueGrad)"
+                filter="url(#neonGlowRevenue)"
+                activeDot={{ r: 5, fill: "#34D399", stroke: "#050507", strokeWidth: 2 }}
+              />
+              <Area
+                type="monotone"
+                dataKey="expenses"
+                stroke="#4318FF"
+                strokeWidth={2.5}
+                fillOpacity={1}
+                fill="url(#expenseGrad)"
+                filter="url(#neonGlowExpense)"
+                activeDot={{ r: 5, fill: "#4318FF", stroke: "#050507", strokeWidth: 2 }}
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        )}
       </div>
     </div>
   );

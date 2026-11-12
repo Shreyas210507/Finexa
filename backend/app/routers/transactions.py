@@ -2,6 +2,7 @@ from datetime import date
 from typing import Optional
 import uuid
 from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from backend.app.database import get_db
@@ -17,6 +18,11 @@ from backend.app.schemas.transaction import (
 from backend.app.services import transaction_service
 
 router = APIRouter(prefix="/transactions", tags=["Transactions"])
+
+
+class CSVImportPayload(BaseModel):
+    csv_content: str
+    filename: Optional[str] = "import.csv"
 
 
 @router.get("", response_model=TransactionListResponse)
@@ -92,6 +98,35 @@ def export_transactions_csv(
         media_type="text/csv",
         headers={"Content-Disposition": f"attachment; filename=transactions-{current_org.id}.csv"},
     )
+
+
+@router.post("/import/csv", status_code=status.HTTP_200_OK)
+def import_transactions_csv(
+    data: CSVImportPayload,
+    db: Session = Depends(get_db),
+    current_org: Organisation = Depends(get_current_org),
+    current_profile: Profile = Depends(get_current_profile),
+    _: None = Depends(require_role(["owner", "admin"])),
+):
+    """
+    Import transactions from CSV content with column auto-mapping,
+    type inference, duplicate detection, and audit logging.
+    """
+    if not data.csv_content.strip():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="CSV content is empty.",
+        )
+
+    summary = transaction_service.import_transactions_csv(
+        db=db,
+        org_id=current_org.id,
+        user_id=current_profile.id,
+        csv_content=data.csv_content,
+        filename=data.filename or "import.csv",
+    )
+
+    return summary
 
 
 @router.get("/{tx_id}", response_model=TransactionResponse)

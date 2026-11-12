@@ -38,10 +38,14 @@ A guided click-path walkthrough for evaluators to experience every core feature 
 **Navigate to**: `/transactions`
 
 **What to show**:
-1. **AG Grid Data Table** — Scroll through 12 months of transactions.
+1. **AG Grid Data Table** — Scroll through 12 months of transactions with source badges (`manual`, `paypal`, `csv_import`, `demo`).
 2. **Search** — Type `"Crestview"` in search → find the flagged $19,500.00 audit entry.
 3. **Filters** — Filter by Category → `Payroll`, or by Type → `expense`.
-4. **CSV Export** — Click the Export button to download transactions.
+4. **CSV Import** — Click **Import CSV** button → choose any bank or credit card export file:
+   - Server parses multi-format dates (`YYYY-MM-DD`, `MM/DD/YYYY`, `DD/MM/YYYY`)
+   - Normalizes negative amounts and parentheses `($50.00)`
+   - Computes SHA-256 fingerprint hashes to prevent duplicate ingestion
+5. **CSV Export** — Click the Export button to download filtered transactions.
 
 **Navigate to**: `/invoices`
 
@@ -108,16 +112,19 @@ A guided click-path walkthrough for evaluators to experience every core feature 
 
 ---
 
-### 🕐 Minute 5 — Payments, Reports & Notifications
+### 🕐 Minute 5 — Payments, Settings, Reports & Notifications
 
 **Navigate to**: `/payments`
 
 **What to show**:
-1. **PayPal Connection Status** — Shows gateway configuration.
-2. **Demo Simulate** — Click on an unpaid invoice → **Simulate Payment**:
+1. **PayPal Gateway Status & Ledger** — Review reconciled payment records with PayPal Order ID and Capture ID columns.
+2. **Live Checkout / Simulate** — Click on an unpaid invoice → Click **Pay with PayPal** or **Simulate Payment**:
+   - Order created via PayPal Orders v2 REST API (`api-m.sandbox.paypal.com`)
+   - Order captured and verified against PayPal's servers
    - Invoice status changes to **Paid** ✅
-   - Payment record appears in the ledger
+   - Payment record appears in the ledger with external capture ID
    - Matching income transaction created for cash reconciliation
+3. **Settings Test**: Navigate to `/settings` → In the PayPal card, click **Test Connection** → Displays live latency and masked credentials.
 
 **Navigate to**: `/reports`
 
@@ -169,5 +176,5 @@ Point evaluators to:
 - **Architecture**: [`ARCHITECTURE.md`](../ARCHITECTURE.md) for technical deep-dive
 - **API Docs**: [`API.md`](../API.md) for full endpoint reference
 - **Swagger**: `/docs` on the backend for interactive API exploration
-- **Test Suite**: 48+ tests covering financial engine, reconciliation, E2E journeys, PayPal integration, and cron jobs
+- **Test Suite**: 51 comprehensive tests covering financial engine parity, reconciliation benchmarks, multi-tenant isolation, PayPal Sandbox Orders v2 lifecycle, E2E journeys, and cron jobs (100% pass rate in <3s).
 

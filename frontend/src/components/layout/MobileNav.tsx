@@ -20,7 +20,7 @@ export function MobileNav({ onOpenMore }: MobileNavProps) {
   ];
 
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 h-16 border-t border-border bg-panel/95 backdrop-blur-md px-2 flex items-center justify-around select-none">
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 h-16 border-t border-border/40 frosted-glass-nav px-2 flex items-center justify-around select-none">
       {primaryTabs.map((tab) => {
         const isActive = pathname === tab.href;
         const Icon = tab.icon;

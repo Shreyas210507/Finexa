@@ -119,6 +119,8 @@ async def create_order(
     """Create PayPal Orders v2 order with CAPTURE intent."""
     token = await get_access_token()
     base_url = _get_base_url()
+    if not isinstance(amount, Decimal):
+        amount = Decimal(str(amount))
 
     order_payload = {
         "intent": "CAPTURE",
@@ -173,6 +175,7 @@ async def create_order(
         "order_id": data["id"],
         "status": data["status"],
         "approve_url": approve_url,
+        "approval_url": approve_url,
         "raw": data,
     }
 

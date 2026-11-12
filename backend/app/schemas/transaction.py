@@ -13,6 +13,10 @@ class TransactionBase(BaseModel):
     date: date
     vendor_or_client: Optional[str] = None
     reference: Optional[str] = None
+    source: Optional[str] = Field(default="manual", description="paypal | manual | csv_import | bank_feed")
+    source_reference: Optional[str] = None
+    external_transaction_id: Optional[str] = None
+    idempotency_key: Optional[str] = None
 
 
 class TransactionCreate(TransactionBase):
@@ -27,12 +31,20 @@ class TransactionUpdate(BaseModel):
     date: Optional[date] = None
     vendor_or_client: Optional[str] = None
     reference: Optional[str] = None
+    source: Optional[str] = None
+    source_reference: Optional[str] = None
+    external_transaction_id: Optional[str] = None
 
 
 class TransactionResponse(TransactionBase):
     id: uuid.UUID
     organisation_id: uuid.UUID
     invoice_id: Optional[uuid.UUID] = None
+    source: str = "manual"
+    source_reference: Optional[str] = None
+    external_transaction_id: Optional[str] = None
+    imported_at: Optional[datetime] = None
+    idempotency_key: Optional[str] = None
     is_deleted: bool
     created_at: datetime
     updated_at: datetime
@@ -46,4 +58,3 @@ class TransactionListResponse(BaseModel):
     page: int
     size: int
     total_pages: int
-

@@ -30,7 +30,7 @@ Complete endpoint reference for the FINEXA Financial Intelligence API. All endpo
 
 ### `GET /api/health`
 
-Health check returning database and Supabase connectivity status.
+Health check returning database, Supabase, Gemini AI, and PayPal Sandbox connectivity status.
 
 **Auth Required**: No
 
@@ -39,7 +39,12 @@ Health check returning database and Supabase connectivity status.
 {
   "status": "healthy",
   "database": "connected",
-  "supabase": "connected"
+  "supabase": "connected",
+  "database_latency_ms": 1.25,
+  "gemini_status": "configured",
+  "gemini_model": "gemini-2.5-flash",
+  "paypal_mode": "sandbox",
+  "paypal_webhook_configured": true
 }
 ```
 
@@ -241,6 +246,30 @@ Create a new transaction. Requires `owner` or `admin` role.
 ### `GET /api/transactions/export/csv`
 
 Export transactions as RFC 4180 CSV file.
+
+### `POST /api/transactions/import/csv`
+
+Import bank or credit card statements via CSV. Automatically identifies header variations, parses multi-format dates, handles negative/parenthetical amounts, and applies SHA-256 deduplication to prevent duplicate entries.
+
+**Auth Required**: Yes
+
+**Request Body**:
+```json
+{
+  "csv_content": "Date,Description,Amount,Category,Type\n2026-10-18,Stripe Payout,15200.00,Revenue,income\n2026-10-19,AWS Cloud,450.00,Hosting,expense",
+  "filename": "bank_statement_october.csv"
+}
+```
+
+**Response** `200 OK`:
+```json
+{
+  "imported": 2,
+  "skipped_duplicates": 0,
+  "failed": 0,
+  "errors": []
+}
+```
 
 ### `GET /api/transactions/{tx_id}`
 

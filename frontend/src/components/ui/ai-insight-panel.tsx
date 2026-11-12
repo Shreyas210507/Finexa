@@ -24,20 +24,20 @@ export function AIInsightPanel({
   return (
     <div
       className={cn(
-        "relative overflow-hidden rounded-[10px] border border-border bg-card p-5 shadow-sm transition-colors",
-        "dark:bg-gradient-to-br dark:from-[#111B32] dark:via-[#0D1428] dark:to-[#111B32] dark:border-[#315BFF]/30 dark:shadow-md",
+        "relative overflow-hidden rounded-2xl glass-card p-5 shadow-lg transition-all",
+        "border border-white/10 hover:border-white/20",
         className
       )}
     >
       {/* Top Gradient Accent Line */}
-      <div className="absolute top-0 left-0 right-0 h-[2.5px] bg-gradient-to-r from-[#20D9F2] via-[#315BFF] to-[#963BFF]" />
+      <div className="absolute top-0 left-0 right-0 h-[2.5px] bg-gradient-to-r from-[#4318FF] via-[#00F0FF] to-[#34D399]" />
 
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-2">
-          <div className="p-1.5 rounded-lg bg-[#315BFF]/10 text-[#315BFF] dark:bg-gradient-to-r dark:from-[#20D9F2]/20 dark:via-[#315BFF]/20 dark:to-[#963BFF]/20 dark:text-[#20D9F2]">
+          <div className="p-1.5 rounded-lg bg-[#4318FF]/15 text-[#00F0FF] border border-[#4318FF]/25">
             <Sparkles className="w-4 h-4" />
           </div>
-          <span className="text-xs font-bold uppercase tracking-wider text-[#315BFF] dark:text-[#20D9F2]">
+          <span className="text-xs font-bold uppercase tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-white to-[#00F0FF]">
             FINEXA AI Intelligence
           </span>
         </div>
@@ -45,15 +45,15 @@ export function AIInsightPanel({
       </div>
 
       <div className="mt-3">
-        <h4 className="text-base font-semibold text-foreground">{title}</h4>
+        <h4 className="text-base font-bold text-foreground">{title}</h4>
         <p className="mt-1 text-sm text-muted-foreground leading-relaxed">
           {description}
         </p>
       </div>
 
       {recommendation && (
-        <div className="mt-3.5 p-3.5 rounded-lg bg-card border border-border text-xs text-foreground shadow-sm flex items-start gap-2.5">
-          <span className="font-bold text-[#315BFF] dark:text-[#20D9F2] shrink-0">Insight:</span>
+        <div className="mt-3.5 p-3.5 rounded-xl glass-card border border-white/10 text-xs text-foreground shadow-sm flex items-start gap-2.5">
+          <span className="font-bold text-[#00F0FF] shrink-0">Insight:</span>
           <span className="leading-relaxed text-foreground/90">{recommendation}</span>
         </div>
       )}

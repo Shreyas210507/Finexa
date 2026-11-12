@@ -15,8 +15,13 @@ try:
     if "sqlite" in db_url:
         engine = create_engine(db_url, connect_args={"check_same_thread": False})
     else:
-        # Validate connection to primary DB (e.g. Supabase Postgres)
-        test_engine = create_engine(db_url, pool_pre_ping=True, echo=False)
+        # Validate connection to primary DB (e.g. Supabase Postgres) with quick 2s timeout
+        test_engine = create_engine(
+            db_url,
+            pool_pre_ping=True,
+            echo=False,
+            connect_args={"connect_timeout": 2},
+        )
         with test_engine.connect() as conn:
             conn.execute(text("SELECT 1"))
         engine = test_engine

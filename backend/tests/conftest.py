@@ -1,3 +1,7 @@
+import os
+os.environ["DATABASE_URL"] = "sqlite:///:memory:"
+os.environ["DEMO_MODE"] = "false"
+
 import uuid
 from datetime import datetime, timezone, timedelta
 import pytest
@@ -25,6 +29,7 @@ TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engin
 
 @pytest.fixture(scope="session", autouse=True)
 def setup_test_db():
+    settings.DEMO_MODE = False
     Base.metadata.create_all(bind=engine)
     yield
     Base.metadata.drop_all(bind=engine)

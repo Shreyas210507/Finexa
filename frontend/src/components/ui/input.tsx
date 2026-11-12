@@ -14,8 +14,8 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
         <input
           type={type}
           className={cn(
-            "flex h-11 w-full rounded-[10px] border border-border bg-input px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground",
-            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#20D9F2] focus-visible:border-transparent",
+            "flex h-11 w-full rounded-xl border border-border bg-input px-3.5 py-2 text-sm text-foreground placeholder:text-muted-foreground",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8B7CFF] focus-visible:border-transparent",
             "disabled:cursor-not-allowed disabled:opacity-50 transition-colors",
             isNumeric && "tabular-nums text-right",
             error && "border-[#EF4444] focus-visible:ring-[#EF4444]",

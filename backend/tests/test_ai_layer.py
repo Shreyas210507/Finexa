@@ -216,3 +216,91 @@ def test_chat_persistence_and_graceful_degradation(client: TestClient, db_sessio
     assert msgs[0]["role"] == "user"
     assert msgs[1]["role"] == "assistant"
 
+
+def test_strategy_agent_simulation_direct(db_session):
+    """Strategy Agent simulates hiring impacts and computes baseline vs simulated metrics."""
+    from backend.app.agents.strategy_agent import FinancialStrategyAgent
+
+    user_id = uuid.uuid4()
+    org_id = uuid.uuid4()
+    prof = Profile(id=user_id, name="Strategist")
+    org = Organisation(id=org_id, name="Novastack Technologies", currency="USD", is_demo=True)
+    mem = OrganisationMember(user_id=user_id, organisation_id=org_id, role="owner")
+    db_session.add_all([prof, org, mem])
+    db_session.commit()
+
+    seed_novastack_demo_data(db_session, org_id)
+
+    strat_agent = FinancialStrategyAgent(db_session, org_id, user_id)
+    res = strat_agent.execute({"hire_count": 3, "salary_per_hire": 7000.0})
+
+    assert "baseline_burn" in res
+    assert "simulated_burn" in res
+    assert float(res["simulated_burn"]) > float(res["baseline_burn"])
+    # Verify timeline events recorded
+    rec = db_session.query(AgentExecution).filter(AgentExecution.organisation_id == org_id, AgentExecution.agent_type == "strategy_agent").first()
+    assert rec is not None
+    events = (rec.output_data or {}).get("timeline_events", [])
+    steps = [e["step"] for e in events]
+    assert "task_received" in steps
+    assert "agent_activated" in steps
+    assert "data_retrieved" in steps
+    assert "analysis_completed" in steps
+    assert "result_confirmed" in steps
+
+
+def test_invoice_agent_draft_creation_and_timeline(db_session):
+    """Invoice Agent creates draft invoice, records approval_requested, and verifies timeline."""
+    user_id = uuid.uuid4()
+    org_id = uuid.uuid4()
+    prof = Profile(id=user_id, name="Controller")
+    org = Organisation(id=org_id, name="Novastack Technologies", currency="USD", is_demo=True)
+    mem = OrganisationMember(user_id=user_id, organisation_id=org_id, role="owner")
+    db_session.add_all([prof, org, mem])
+    db_session.commit()
+
+    seed_novastack_demo_data(db_session, org_id)
+
+    inv_agent = InvoiceAgent(db_session, org_id, user_id)
+    res = inv_agent.execute({
+        "action": "create_draft",
+        "customer_name": "Apex Cloud Systems",
+        "amount": 12500.00,
+        "description": "Enterprise API Integration Q4",
+    })
+
+    assert "draft" in res
+    assert res["proposed_action"] == "Issue Invoice INV-2026-004 to Apex Cloud Systems" or "INV-" in res["proposed_action"]
+    assert "12,500.00" in res["financial_impact"]
+    assert res["draft"]["status"] == "Draft"
+
+    rec = db_session.query(AgentExecution).filter(AgentExecution.organisation_id == org_id, AgentExecution.agent_type == "invoice_agent").first()
+    assert rec.status == "needs_approval"
+    events = (rec.output_data or {}).get("timeline_events", [])
+    steps = [e["step"] for e in events]
+    assert "approval_requested" in steps
+
+
+def test_cfo_multi_agent_orchestration_pipeline(db_session):
+    """CFO Orchestrator coordinates Cash Flow, Invoice, and Audit agents with structured handoffs."""
+    user_id = uuid.uuid4()
+    org_id = uuid.uuid4()
+    prof = Profile(id=user_id, name="Executive")
+    org = Organisation(id=org_id, name="Novastack Technologies", currency="USD", is_demo=True)
+    mem = OrganisationMember(user_id=user_id, organisation_id=org_id, role="owner")
+    db_session.add_all([prof, org, mem])
+    db_session.commit()
+
+    seed_novastack_demo_data(db_session, org_id, include_anomaly=True)
+
+    cfo = CFOOrchestratorAgent(db_session, org_id, user_id)
+    orch_res = cfo.orchestrate_cross_agent_review()
+
+    assert orch_res["routing"] == "multi_agent_orchestration"
+    assert len(orch_res["handoffs"]) == 3
+    assert orch_res["pipeline"] == ["CFO Orchestrator", "Cash Flow Agent", "Invoice Agent", "Audit Agent"]
+    assert "cashflow" in orch_res["results"]
+    assert "invoices" in orch_res["results"]
+    assert "audit" in orch_res["results"]
+
+

@@ -64,7 +64,58 @@ def record_payment_and_reconcile(
 
     Returns dict with payment details and reconciliation status.
     """
-    pay_date = payment_date or date(2026, 10, 31)
+    pay_date = payment_date or date.today()
+
+    # Idempotency check: if PayPal capture ID was already reconciled, return idempotently
+    if paypal_capture_id:
+        existing_pay = (
+            db.query(Payment)
+            .filter(
+                Payment.organisation_id == org_id,
+                Payment.paypal_capture_id == paypal_capture_id,
+            )
+            .first()
+        )
+        if existing_pay:
+            inv = db.query(Invoice).filter(Invoice.id == existing_pay.invoice_id).first()
+            return {
+                "payment_id": str(existing_pay.id),
+                "invoice_number": inv.invoice_number if inv else "",
+                "amount_captured": str(existing_pay.amount),
+                "invoice_new_status": inv.status if inv else "Paid",
+                "invoice_balance_remaining": str(inv.balance) if inv else "0.00",
+                "method": existing_pay.method,
+                "paypal_order_id": existing_pay.paypal_order_id,
+                "paypal_capture_id": existing_pay.paypal_capture_id,
+                "transaction_created": True,
+                "idempotent": True,
+            }
+
+    # Idempotency check: if PayPal order ID was already reconciled, return idempotently
+    if paypal_order_id:
+        existing_by_order = (
+            db.query(Payment)
+            .filter(
+                Payment.organisation_id == org_id,
+                Payment.paypal_order_id == paypal_order_id,
+                Payment.status == "successful",
+            )
+            .first()
+        )
+        if existing_by_order:
+            inv = db.query(Invoice).filter(Invoice.id == existing_by_order.invoice_id).first()
+            return {
+                "payment_id": str(existing_by_order.id),
+                "invoice_number": inv.invoice_number if inv else "",
+                "amount_captured": str(existing_by_order.amount),
+                "invoice_new_status": inv.status if inv else "Paid",
+                "invoice_balance_remaining": str(inv.balance) if inv else "0.00",
+                "method": existing_by_order.method,
+                "paypal_order_id": existing_by_order.paypal_order_id,
+                "paypal_capture_id": existing_by_order.paypal_capture_id,
+                "transaction_created": True,
+                "idempotent": True,
+            }
 
     # 1. Load invoice with org isolation
     invoice = (
@@ -132,6 +183,13 @@ def record_payment_and_reconcile(
         description=f"Payment received for {invoice.invoice_number} via {method}",
         amount=amount,
         date=pay_date,
+        vendor_or_client=client_name,
+        reference=f"PAY-{invoice.invoice_number}",
+        invoice_id=invoice.id,
+        source="paypal",
+        source_reference=invoice.invoice_number,
+        external_transaction_id=paypal_capture_id,
+        idempotency_key=paypal_capture_id or paypal_order_id,
         is_deleted=False,
     )
     db.add(tx)

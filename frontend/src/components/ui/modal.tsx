@@ -48,7 +48,7 @@ export function Modal({
       {/* Content */}
       <div
         className={cn(
-          "relative z-50 w-full max-w-lg rounded-[10px] border border-border bg-card p-6 shadow-xl transition-all duration-200",
+          "relative z-50 w-full max-w-lg rounded-2xl frosted-glass-modal p-6 transition-all duration-200 text-foreground max-h-[90vh] overflow-y-auto",
           className
         )}
       >

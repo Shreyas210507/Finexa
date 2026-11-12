@@ -143,7 +143,7 @@ export default function ForecastsPage() {
         };
       case "medium":
         return {
-          bg: "bg-[#315BFF]/10 text-[#315BFF] border-[#315BFF]/20",
+          bg: "bg-[#8B7CFF]/10 text-[#8B7CFF] border-[#8B7CFF]/20",
           icon: ShieldCheck,
           label: "MODERATE RISK",
         };
@@ -177,23 +177,24 @@ export default function ForecastsPage() {
 
         <div className="flex items-center gap-2">
           {/* Horizon Toggle */}
-          <div className="flex items-center rounded-lg border border-border bg-card p-0.5 text-xs">
+          <div className="flex items-center rounded-full border border-white/10 frosted-glass-card p-0.5 text-xs">
             {[30, 90, 180].map((d) => (
               <button
                 key={d}
                 type="button"
                 onClick={() => setHorizon(d)}
-                className={`px-3 py-1.5 rounded-md font-semibold transition-colors ${horizon === d
-                  ? "bg-[#315BFF] text-white"
-                  : "text-muted-foreground hover:text-foreground"
-                  }`}
+                className={`px-3.5 py-1.5 rounded-full font-bold transition-all ${
+                  horizon === d
+                    ? "bg-[#4318FF] text-white shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
               >
                 {d} Days
               </button>
             ))}
           </div>
 
-          <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-[10px] bg-[#F59E0B]/10 border border-[#F59E0B]/20 text-xs text-[#F59E0B]">
+          <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#F59E0B]/10 border border-[#F59E0B]/20 text-xs text-[#F59E0B]">
             <AlertCircle className="w-3.5 h-3.5 shrink-0" />
             <span>Projection, not a guarantee</span>
           </div>
@@ -201,11 +202,11 @@ export default function ForecastsPage() {
       </div>
 
       {/* Projection Chart & Milestone Banner */}
-      <div className="rounded-[10px] border border-border bg-card p-5 space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-border/60 pb-3 gap-2">
+      <div className="rounded-3xl border border-white/10 frosted-glass-card p-6 space-y-4 shadow-xl">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-white/10 pb-3 gap-2">
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="text-sm sm:text-base font-semibold text-foreground">
+              <h2 className="text-sm sm:text-base font-bold text-foreground">
                 {horizon}-Day Cash Projection & Uncertainty Cone
               </h2>
               <LabelChip kind="forecast" />
@@ -217,7 +218,7 @@ export default function ForecastsPage() {
           </div>
 
           {forecast?.warning_shortage_date && (
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/20 text-xs text-amber-500">
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-500">
               <Clock className="w-4 h-4 shrink-0" />
               <span>
                 Safety Threshold (&lt;$150k):{" "}
@@ -229,27 +230,27 @@ export default function ForecastsPage() {
 
         {/* Milestone Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 text-xs">
-          <div className="p-3 rounded-lg border border-border/60 bg-panel">
-            <span className="text-muted-foreground block">Starting Balance</span>
-            <span className="text-base font-bold text-foreground tabular-nums">
+          <div className="p-3.5 rounded-2xl border border-white/10 frosted-glass-card">
+            <span className="text-muted-foreground block text-[11px] font-semibold">Starting Balance</span>
+            <span className="text-base font-extrabold text-foreground font-financial">
               ${Number(forecast?.opening_balance ?? 0).toLocaleString("en-US", { minimumFractionDigits: 2 })}
             </span>
           </div>
-          <div className="p-3 rounded-lg border border-border/60 bg-panel">
-            <span className="text-muted-foreground block">Projected Closing ({horizon}d)</span>
-            <span className="text-base font-bold text-foreground tabular-nums">
+          <div className="p-3.5 rounded-2xl border border-white/10 frosted-glass-card">
+            <span className="text-muted-foreground block text-[11px] font-semibold">Projected Closing ({horizon}d)</span>
+            <span className="text-base font-extrabold text-foreground font-financial">
               ${Number(forecast?.projected_closing_balance ?? 0).toLocaleString("en-US", { minimumFractionDigits: 2 })}
             </span>
           </div>
-          <div className="p-3 rounded-lg border border-border/60 bg-panel">
-            <span className="text-muted-foreground block">Safety Buffer Date (&lt;$150k)</span>
-            <span className="text-base font-bold text-amber-500">
+          <div className="p-3.5 rounded-2xl border border-white/10 frosted-glass-card">
+            <span className="text-muted-foreground block text-[11px] font-semibold">Safety Buffer Date (&lt;$150k)</span>
+            <span className="text-base font-extrabold text-amber-400 font-financial">
               {forecast?.warning_shortage_date ?? "Safe for period"}
             </span>
           </div>
-          <div className="p-3 rounded-lg border border-border/60 bg-panel">
-            <span className="text-muted-foreground block">Projected Zero Depletion</span>
-            <span className="text-base font-bold text-[#EF4444]">
+          <div className="p-3.5 rounded-2xl border border-white/10 frosted-glass-card">
+            <span className="text-muted-foreground block text-[11px] font-semibold">Projected Zero Depletion</span>
+            <span className="text-base font-extrabold text-[#EF4444] font-financial">
               {forecast?.zero_depletion_date ?? "Over 6 months"}
             </span>
           </div>
@@ -288,8 +289,8 @@ export default function ForecastsPage() {
                       <div
                         style={{ height: `${heightPct}%` }}
                         className={`w-full rounded-t transition-all ${isShortage
-                          ? "bg-amber-500/70 hover:bg-amber-500"
-                          : "bg-[#20D9F2]/70 hover:bg-[#20D9F2]"
+                          ? "bg-[#F07878]/80 hover:bg-[#F07878]"
+                          : "bg-[#8B7CFF]/70 hover:bg-[#8B7CFF]"
                           }`}
                       />
                       <span className="text-[9px] text-muted-foreground mt-1 truncate max-w-full">
@@ -301,11 +302,11 @@ export default function ForecastsPage() {
             </div>
             <div className="flex items-center justify-between text-[11px] text-muted-foreground px-1">
               <span className="flex items-center gap-1.5">
-                <span className="w-2.5 h-2.5 rounded-sm bg-[#20D9F2]/70" />
+                <span className="w-2.5 h-2.5 rounded-sm bg-[#8B7CFF]/70" />
                 <span>Standard Cash Trajectory</span>
               </span>
               <span className="flex items-center gap-1.5">
-                <span className="w-2.5 h-2.5 rounded-sm bg-amber-500/70" />
+                <span className="w-2.5 h-2.5 rounded-sm bg-[#F07878]/80" />
                 <span>Below Threshold (&lt;$150k)</span>
               </span>
               <span>{forecast?.seasonal_note}</span>
@@ -317,10 +318,10 @@ export default function ForecastsPage() {
       {/* Simulator Inputs & Comparison Cards */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Controls Panel */}
-        <div className="rounded-[10px] border border-border bg-card p-5 space-y-5">
+        <div className="rounded-2xl border border-border bg-card p-5 space-y-5">
           <div className="flex items-center justify-between border-b border-border/60 pb-3">
             <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
-              <Sliders className="w-4 h-4 text-[#315BFF]" />
+              <Sliders className="w-4 h-4 text-[#8B7CFF]" />
               <span>Simulator Parameters</span>
             </h3>
             <LabelChip kind="assumption" />
@@ -340,8 +341,8 @@ export default function ForecastsPage() {
                   key={t.id}
                   type="button"
                   onClick={() => setScenarioType(t.id as typeof scenarioType)}
-                  className={`p-2 rounded-md font-medium text-center border transition-colors ${scenarioType === t.id
-                    ? "bg-[#315BFF]/10 text-[#315BFF] border-[#315BFF]/30 font-semibold"
+                  className={`p-2 rounded-xl font-medium text-center border transition-colors ${scenarioType === t.id
+                    ? "bg-[#8B7CFF]/15 text-[#8B7CFF] border-[#8B7CFF]/30 font-semibold"
                     : "border-border/60 text-muted-foreground hover:bg-panel"
                     }`}
                 >
@@ -365,7 +366,7 @@ export default function ForecastsPage() {
                   max="10"
                   value={devCount}
                   onChange={(e) => setDevCount(Number(e.target.value))}
-                  className="w-full accent-[#315BFF]"
+                  className="w-full accent-[#8B7CFF]"
                 />
               </div>
 
@@ -383,7 +384,7 @@ export default function ForecastsPage() {
                   step="500"
                   value={devSalary}
                   onChange={(e) => setDevSalary(Number(e.target.value))}
-                  className="w-full accent-[#315BFF]"
+                  className="w-full accent-[#8B7CFF]"
                 />
               </div>
             </>
@@ -402,10 +403,10 @@ export default function ForecastsPage() {
                 step="5"
                 value={expenseDelta}
                 onChange={(e) => setExpenseDelta(Number(e.target.value))}
-                className="w-full accent-[#315BFF]"
+                className="w-full accent-[#4318FF]"
               />
               <p className="text-[10px] text-muted-foreground mt-1">
-                Applied against Novastack trailing 3M average expenses ($184,833.33/mo).
+                Applied against organisation trailing 3M average operating expenses.
               </p>
             </div>
           )}
@@ -425,7 +426,7 @@ export default function ForecastsPage() {
                 step="5"
                 value={revDelta}
                 onChange={(e) => setRevDelta(Number(e.target.value))}
-                className="w-full accent-[#315BFF]"
+                className="w-full accent-[#8B7CFF]"
               />
             </div>
           )}
@@ -445,7 +446,7 @@ export default function ForecastsPage() {
                 step="25000"
                 value={investmentAmt}
                 onChange={(e) => setInvestmentAmt(Number(e.target.value))}
-                className="w-full accent-[#315BFF]"
+                className="w-full accent-[#8B7CFF]"
               />
             </div>
           )}
@@ -458,7 +459,7 @@ export default function ForecastsPage() {
               value={scenarioName}
               onChange={(e) => setScenarioName(e.target.value)}
               placeholder="e.g. Q1 Engineering Scale"
-              className="w-full h-8 px-2.5 text-xs rounded-md border border-border bg-input text-foreground"
+              className="w-full h-8 px-2.5 text-xs rounded-xl border border-border bg-input text-foreground"
             />
           </div>
 
@@ -473,7 +474,7 @@ export default function ForecastsPage() {
                 setInvestmentAmt(0);
                 executeSimulation();
               }}
-              className="flex-1 flex items-center justify-center gap-1.5"
+              className="flex-1 flex items-center justify-center gap-1.5 rounded-xl"
             >
               <RotateCcw className="w-3.5 h-3.5" />
               <span>Reset</span>
@@ -483,7 +484,7 @@ export default function ForecastsPage() {
               size="sm"
               onClick={executeSimulation}
               disabled={simulating}
-              className="flex-1 flex items-center justify-center gap-1.5"
+              className="flex-1 flex items-center justify-center gap-1.5 rounded-xl"
             >
               <Play className="w-3.5 h-3.5" />
               <span>{simulating ? "Calculating..." : "Run Engine"}</span>
@@ -495,9 +496,9 @@ export default function ForecastsPage() {
             size="sm"
             onClick={handleSaveScenario}
             disabled={saving}
-            className="w-full flex items-center justify-center gap-1.5 text-xs"
+            className="w-full flex items-center justify-center gap-1.5 text-xs rounded-xl"
           >
-            <Bookmark className="w-3.5 h-3.5 text-[#315BFF]" />
+            <Bookmark className="w-3.5 h-3.5 text-[#8B7CFF]" />
             <span>{saving ? "Saving..." : "Save This Scenario"}</span>
           </Button>
         </div>
@@ -552,24 +553,30 @@ export default function ForecastsPage() {
           <AIInsightPanel
             title={simResult?.scenario_name ?? "Simulation Analysis"}
             description={
-              simResult?.explanation ??
-              "Under the current baseline scenario, Novastack Technologies maintains an operational burn rate of $51,166.67/month with 4.8 months of liquid runway."
+              simResult?.explanation ||
+              (forecast
+                ? `Under the baseline scenario, daily operational burn is $${parseFloat(forecast.daily_burn_rate || "0").toLocaleString("en-US", { minimumFractionDigits: 2 })}/day with projected closing balance of $${parseFloat(forecast.projected_closing_balance || "0").toLocaleString("en-US", { minimumFractionDigits: 2 })}.`
+                : "Deterministic cash runway simulation based on live double-entry disbursements.")
             }
-            recommendation="Maintain at least a 6-month safety runway ($307,000 liquid reserves) before initiating high-fixed-cost salary commitments."
+            recommendation={
+              simResult
+                ? `Simulated net burn shifts by $${parseFloat(simResult.delta_burn || "0").toLocaleString("en-US", { minimumFractionDigits: 2 })}/mo. Maintain at least a 6-month safety runway buffer before committing to recurring fixed liabilities.`
+                : "Maintain at least a 6-month safety runway buffer before initiating high-fixed-cost salary commitments."
+            }
           />
 
           {/* Saved Scenarios Strip */}
           {savedScenarios.length > 0 && (
-            <div className="rounded-[10px] border border-border bg-card p-4 space-y-2">
+            <div className="rounded-2xl border border-white/10 frosted-glass-card p-4 space-y-2">
               <h4 className="text-xs font-bold text-foreground flex items-center gap-1.5 uppercase tracking-wide">
-                <Bookmark className="w-3.5 h-3.5 text-[#315BFF]" />
+                <Bookmark className="w-3.5 h-3.5 text-[#4318FF]" />
                 <span>Saved Scenarios ({savedScenarios.length})</span>
               </h4>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
                 {savedScenarios.map((sc) => (
                   <div
                     key={sc.id}
-                    className="p-2.5 rounded-lg border border-border/60 bg-panel flex items-center justify-between"
+                    className="p-2.5 rounded-xl border border-white/10 frosted-glass-card flex items-center justify-between"
                   >
                     <div>
                       <span className="font-semibold text-foreground block">{sc.name}</span>

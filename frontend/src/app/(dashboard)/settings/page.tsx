@@ -11,7 +11,7 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Modal } from "@/components/ui/modal";
 import { useToast } from "@/components/ui/toast";
 import { apiClient } from "@/lib/api-client";
-import { MemberResponse } from "@/lib/api-types";
+import { MemberResponse, GatewayStatusResponse } from "@/lib/api-types";
 import {
   Building2,
   Users,
@@ -22,6 +22,10 @@ import {
   Plus,
   Loader2,
   ExternalLink,
+  CheckCircle2,
+  AlertTriangle,
+  RefreshCw,
+  User,
 } from "lucide-react";
 
 export default function SettingsPage() {
@@ -32,6 +36,8 @@ export default function SettingsPage() {
   const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false);
 
   // Form states
+  const [profileName, setProfileName] = useState("");
+  const [savingProfile, setSavingProfile] = useState(false);
   const [orgName, setOrgName] = useState("Novastack Technologies");
   const [currency, setCurrency] = useState("USD");
   const [members, setMembers] = useState<MemberResponse[]>([]);
@@ -42,13 +48,24 @@ export default function SettingsPage() {
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState("member");
   const [inviting, setInviting] = useState(false);
+  const [gatewayStatus, setGatewayStatus] = useState<GatewayStatusResponse | null>(null);
+  const [testingGateway, setTestingGateway] = useState(false);
+
+  // Zapier state
+  const [zapierUrl, setZapierUrl] = useState("");
+  const [zapierEventType, setZapierEventType] = useState("invoice.paid");
+  const [isZapierOpen, setIsZapierOpen] = useState(false);
+  const [dispatchingZapier, setDispatchingZapier] = useState(false);
+  const [zapierResult, setZapierResult] = useState<Record<string, unknown> | null>(null);
 
   const loadOrgData = useCallback(async () => {
     try {
       setLoadingOrg(true);
-      const [org, membersList] = await Promise.allSettled([
+      const [org, membersList, gwStatus, currentUser] = await Promise.allSettled([
         apiClient.getCurrentOrg(),
         apiClient.getOrgMembers(),
+        apiClient.getGatewayStatus(),
+        apiClient.getCurrentUser(),
       ]);
 
       if (org.status === "fulfilled") {
@@ -57,6 +74,12 @@ export default function SettingsPage() {
       }
       if (membersList.status === "fulfilled") {
         setMembers(membersList.value);
+      }
+      if (gwStatus.status === "fulfilled") {
+        setGatewayStatus(gwStatus.value);
+      }
+      if (currentUser.status === "fulfilled" && currentUser.value?.profile?.name) {
+        setProfileName(currentUser.value.profile.name);
       }
     } catch {
       // Keep defaults
@@ -68,6 +91,28 @@ export default function SettingsPage() {
   useEffect(() => {
     loadOrgData();
   }, [loadOrgData]);
+
+  const handleSaveProfile = async () => {
+    if (!profileName.trim()) return;
+    try {
+      setSavingProfile(true);
+      await apiClient.updateProfile({ name: profileName.trim() });
+      addToast({
+        type: "success",
+        title: "Profile Updated",
+        message: "Your name has been updated successfully.",
+      });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Failed to save profile";
+      addToast({
+        type: "error",
+        title: "Update Failed",
+        message: msg,
+      });
+    } finally {
+      setSavingProfile(false);
+    }
+  };
 
   const handleSaveGeneral = async () => {
     try {
@@ -151,6 +196,49 @@ export default function SettingsPage() {
       {/* General Settings */}
       {activeTab === "general" && (
         <div className="space-y-6 max-w-2xl">
+          {/* User Profile Card */}
+          <div className="rounded-2xl border border-border bg-card p-6 space-y-4 shadow-sm">
+            <div className="flex items-center gap-2.5">
+              <div className="h-8 w-8 rounded-xl bg-[#4318FF]/10 text-[#4318FF] dark:text-[#818CF8] border border-[#4318FF]/20 flex items-center justify-center">
+                <User className="w-4 h-4" />
+              </div>
+              <div>
+                <h3 className="text-base font-semibold text-foreground">
+                  User Profile
+                </h3>
+                <p className="text-xs text-muted-foreground">
+                  Personalize your identity and greetings across FINEXA
+                </p>
+              </div>
+            </div>
+
+            <div>
+              <label className="text-xs font-semibold text-muted-foreground block mb-1.5">
+                Full Display Name
+              </label>
+              <Input
+                value={profileName}
+                onChange={(e) => setProfileName(e.target.value)}
+                placeholder="e.g. Alex Mercer"
+                disabled={loadingOrg || savingProfile}
+                className="rounded-xl"
+              />
+            </div>
+
+            <div className="pt-1">
+              <Button
+                variant="primary"
+                onClick={handleSaveProfile}
+                disabled={loadingOrg || savingProfile || !profileName.trim()}
+                className="flex items-center gap-1.5 rounded-full px-5"
+              >
+                {savingProfile && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                <span>Save Profile</span>
+              </Button>
+            </div>
+          </div>
+
+          {/* Organisation Profile Card */}
           <div className="rounded-2xl border border-border bg-card p-6 space-y-4 shadow-sm">
             <h3 className="text-base font-semibold text-foreground">
               Organisation Profile
@@ -189,7 +277,7 @@ export default function SettingsPage() {
                 className="flex items-center gap-1.5 rounded-full px-5"
               >
                 {savingOrg && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                <span>Save Changes</span>
+                <span>Save Organisation</span>
               </Button>
             </div>
           </div>
@@ -275,59 +363,124 @@ export default function SettingsPage() {
       {/* Integrations */}
       {activeTab === "integrations" && (
         <div className="space-y-4 max-w-3xl">
-          <div className="rounded-[10px] border border-border bg-card p-5 flex items-start justify-between">
-            <div className="flex items-start gap-3">
-              <div className="p-2.5 rounded-lg bg-[#315BFF]/10 text-[#315BFF]">
-                <CreditCard className="w-5 h-5" />
+          {/* PayPal Gateway Status Card */}
+          <div className="rounded-2xl border border-border bg-card p-5 space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+              <div className="flex items-start gap-3">
+                <div className="p-2.5 rounded-xl bg-[#8B7CFF]/15 text-[#8B7CFF]">
+                  <CreditCard className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h4 className="text-sm font-semibold text-foreground">PayPal Payment Gateway</h4>
+                    <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full bg-[#8B7CFF]/15 text-[#8B7CFF]">
+                      {gatewayStatus?.mode || "Sandbox"}
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Orders v2 real-time checkout, idempotent payment capture, and automated invoice reconciliation.
+                  </p>
+                </div>
               </div>
-              <div>
-                <h4 className="text-sm font-semibold text-foreground">PayPal Sandbox</h4>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  Orders v2 capture and automated invoice settlement webhooks.
-                </p>
-                <span className="inline-block mt-2 text-[11px] text-[#22C55E] font-medium">
-                  ● Connected (Orders v2 Sandbox)
+
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={async () => {
+                    try {
+                      setTestingGateway(true);
+                      const status = await apiClient.getGatewayStatus();
+                      setGatewayStatus(status);
+                      addToast({
+                        type: status.configured ? "success" : "info",
+                        title: status.configured ? "PayPal Connected" : "Sandbox Mode",
+                        message: status.configured
+                          ? `PayPal OAuth2 connection verified (${status.mode.toUpperCase()}). Client ID: ${status.client_id_masked}.`
+                          : "PayPal credentials not set in environment. Running in verified local sandbox mode.",
+                      });
+                    } catch {
+                      addToast({ type: "error", title: "Gateway Unreachable", message: "Failed to communicate with payment gateway service." });
+                    } finally {
+                      setTestingGateway(false);
+                    }
+                  }}
+                  disabled={testingGateway}
+                  className="flex items-center gap-1.5"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${testingGateway ? "animate-spin" : ""}`} />
+                  <span>Test Connection</span>
+                </Button>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => router.push("/payments")}
+                  className="flex items-center gap-1.5"
+                >
+                  <span>Collections</span>
+                  <ExternalLink className="w-3.5 h-3.5" />
+                </Button>
+              </div>
+            </div>
+
+            {/* Connection Details Table */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-3 border-t border-border/60 text-xs">
+              <div className="p-3 rounded-xl bg-muted/40 border border-border">
+                <span className="text-muted-foreground block text-[11px]">Connection Status</span>
+                <span className="font-bold flex items-center gap-1.5 mt-0.5 text-[#48D597]">
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  <span>{gatewayStatus?.configured ? "Connected & Live" : "Sandbox Active"}</span>
+                </span>
+              </div>
+
+              <div className="p-3 rounded-xl bg-muted/40 border border-border">
+                <span className="text-muted-foreground block text-[11px]">Client ID</span>
+                <span className="font-mono text-[11px] text-foreground font-semibold mt-0.5 block">
+                  {gatewayStatus?.client_id_masked || "Not Configured"}
+                </span>
+              </div>
+
+              <div className="p-3 rounded-xl bg-muted/40 border border-border">
+                <span className="text-muted-foreground block text-[11px]">Webhook Verification</span>
+                <span className="font-semibold text-foreground mt-0.5 block">
+                  {gatewayStatus?.webhook_id_configured ? "HMAC Active" : "Idempotent Deduplication"}
                 </span>
               </div>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => router.push("/payments")}
-              className="flex items-center gap-1.5"
-            >
-              <span>Manage Gateway</span>
-              <ExternalLink className="w-3.5 h-3.5" />
-            </Button>
           </div>
 
-          <div className="rounded-[10px] border border-border bg-card p-5 flex items-start justify-between">
-            <div className="flex items-start gap-3">
-              <div className="p-2.5 rounded-lg bg-[#963BFF]/10 text-[#963BFF]">
+          {/* Zapier Outbound Card */}
+          <div className="rounded-2xl border border-white/10 glass-card p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-lg">
+            <div className="flex items-start gap-3.5">
+              <div className="p-2.5 rounded-xl bg-[#4318FF]/15 border border-[#4318FF]/25 text-[#00F0FF] shadow-inner">
                 <Webhook className="w-5 h-5" />
               </div>
               <div>
-                <h4 className="text-sm font-semibold text-foreground">Zapier Outbound Webhooks</h4>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  HMAC-signed payloads dispatched on invoice payment, overdue, and audit alerts.
+                <div className="flex items-center gap-2">
+                  <h4 className="text-sm font-bold text-foreground">Zapier Outbound Automation</h4>
+                  <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-[#34D399]/15 text-[#34D399] border border-[#34D399]/20">
+                    Live HMAC-SHA256
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground mt-0.5 max-w-md">
+                  Real-time webhook notifications for invoice settlements, overdue balances, and Audit Sentinel anomaly alerts.
                 </p>
-                <span className="inline-block mt-2 text-[11px] text-[#22C55E] font-medium">
-                  ● Active Outbound Dispatcher
-                </span>
+                {zapierResult && (
+                  <div className="mt-2 text-[11px] font-mono text-[#34D399] flex items-center gap-1.5">
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    <span>Last delivery: Event {(zapierResult as any)?.result?.event_type} dispatched (HTTP {(zapierResult as any)?.result?.response_code || 200})</span>
+                  </div>
+                )}
               </div>
             </div>
             <Button
               variant="outline"
               size="sm"
-              onClick={() => {
-                addToast({
-                  type: "info",
-                  title: "Zapier Dispatcher Configured",
-                  message: "Outbound events are dispatched via HMAC-SHA256 signature headers to registered webhook listeners.",
-                });
-              }}
+              onClick={() => setIsZapierOpen(true)}
+              className="border-white/10 glass-card hover:border-[#4318FF]/40 shrink-0"
             >
-              View Status
+              <span>Configure & Test</span>
             </Button>
           </div>
         </div>
@@ -413,6 +566,97 @@ export default function SettingsPage() {
         confirmText="Reset Now"
         isDestructive={true}
       />
+
+      {/* Zapier Configuration & Test Modal */}
+      <Modal
+        isOpen={isZapierOpen}
+        onClose={() => setIsZapierOpen(false)}
+        title="Zapier Webhook Dispatcher"
+        description="Connect FINEXA to Zapier to trigger automated Slack messages, emails, or Google Sheets rows."
+      >
+        <div className="space-y-4">
+          <div>
+            <label className="text-xs text-muted-foreground mb-1 block font-semibold">
+              Zapier Catch Hook URL
+            </label>
+            <Input
+              placeholder="https://hooks.zapier.com/hooks/catch/... (leave blank for local test)"
+              value={zapierUrl}
+              onChange={(e) => setZapierUrl(e.target.value)}
+              className="font-mono text-xs"
+            />
+            <span className="text-[11px] text-muted-foreground mt-1 block">
+              In Zapier, create a Zap with trigger <strong>Webhooks by Zapier &gt; Catch Hook</strong>, then paste the URL above.
+            </span>
+          </div>
+
+          <div>
+            <label className="text-xs text-muted-foreground mb-1 block font-semibold">
+              Event Trigger to Test
+            </label>
+            <Select
+              value={zapierEventType}
+              onChange={(e) => setZapierEventType(e.target.value)}
+              options={[
+                { value: "invoice.paid", label: "Invoice Paid (Payment captured via PayPal)" },
+                { value: "invoice.overdue", label: "Invoice Overdue (Aging alert triggered)" },
+                { value: "audit.anomaly_detected", label: "Audit Sentinel Flag (Duplicate expense detected)" },
+                { value: "cashflow.burn_spike", label: "Runway Alert (Burn rate exceeded baseline)" },
+              ]}
+            />
+          </div>
+
+          {zapierResult && (
+            <div className="p-3.5 rounded-xl border border-white/10 bg-white/5 space-y-1.5 text-xs">
+              <div className="flex items-center justify-between font-bold text-[#34D399]">
+                <span>Status: Dispatched</span>
+                <span className="font-mono">HTTP {String((zapierResult as Record<string, any>)?.result?.response_code || 200)}</span>
+              </div>
+              <div className="text-muted-foreground text-[11px] truncate">
+                Target: <span className="font-mono text-foreground">{String((zapierResult as Record<string, any>)?.result?.url)}</span>
+              </div>
+              <div className="text-muted-foreground text-[11px]">
+                HMAC-SHA256: <span className="font-mono text-[#00F0FF]">{String((zapierResult as Record<string, any>)?.result?.signature_header)}</span>
+              </div>
+            </div>
+          )}
+
+          <div className="flex justify-end gap-2 pt-2 border-t border-white/10">
+            <Button variant="outline" onClick={() => setIsZapierOpen(false)}>
+              Close
+            </Button>
+            <Button
+              variant="primary"
+              disabled={dispatchingZapier}
+              onClick={async () => {
+                try {
+                  setDispatchingZapier(true);
+                  const res = await apiClient.testZapierWebhook(zapierUrl, zapierEventType);
+                  setZapierResult(res);
+                  addToast({
+                    type: "success",
+                    title: "Zapier Event Dispatched",
+                    message: `Dispatched ${zapierEventType} payload with HMAC-SHA256 signature.`,
+                  });
+                } catch (e: unknown) {
+                  const err = e as Error;
+                  addToast({
+                    type: "error",
+                    title: "Dispatch Failed",
+                    message: err.message || "Failed to dispatch webhook.",
+                  });
+                } finally {
+                  setDispatchingZapier(false);
+                }
+              }}
+              className="flex items-center gap-1.5"
+            >
+              {dispatchingZapier && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+              <span>Dispatch Test Event</span>
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

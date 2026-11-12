@@ -24,7 +24,7 @@ class Settings(BaseSettings):
 
     # AI Configuration (Gemini)
     GEMINI_API_KEY: str = Field(default="")
-    GEMINI_MODEL: str = Field(default="gemini-2.5-flash")
+    GEMINI_MODEL: str = Field(default="gemini-3.1-flash-lite")
     AI_RATE_LIMIT_PER_MINUTE: int = Field(default=20)
     AI_MAX_TOOL_CALLS: int = Field(default=6)
     AI_MAX_OUTPUT_TOKENS: int = Field(default=1200)
